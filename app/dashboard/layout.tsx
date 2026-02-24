@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   LayoutDashboard,
   Calendar,
@@ -26,10 +26,10 @@ import {
   Bell,
   Menu,
   ChevronLeft,
-} from "lucide-react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useState } from "react"
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 const navigation = [
   {
@@ -74,30 +74,35 @@ const navigation = [
     icon: Users,
     current: false,
   },
-]
+];
 
 interface DashboardLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const pathname = usePathname()
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const pathname = usePathname();
 
   const updatedNavigation = navigation.map((item) => ({
     ...item,
     current: pathname === item.href,
-  }))
+  }));
 
   return (
     <div className="h-screen flex bg-gray-100">
       {/* Mobile sidebar */}
-      <div className={cn(
-        "fixed inset-0 z-50 lg:hidden",
-        sidebarOpen ? "block" : "hidden"
-      )}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+      <div
+        className={cn(
+          "fixed inset-0 z-50 lg:hidden",
+          sidebarOpen ? "block" : "hidden",
+        )}
+      >
+        <div
+          className="fixed inset-0 bg-gray-600 bg-opacity-75"
+          onClick={() => setSidebarOpen(false)}
+        />
         <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
           <div className="absolute top-0 right-0 -mr-12 pt-2">
             <button
@@ -114,10 +119,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Desktop sidebar */}
-      <div className={cn(
-        "hidden lg:flex lg:flex-shrink-0 transition-all duration-300",
-        sidebarCollapsed ? "lg:w-16" : "lg:w-64"
-      )}>
+      <div
+        className={cn(
+          "hidden lg:flex lg:flex-shrink-0 transition-all duration-300",
+          sidebarCollapsed ? "lg:w-16" : "lg:w-64",
+        )}
+      >
         <div className="flex flex-col w-full">
           <div className="flex items-center justify-between h-16 flex-shrink-0 px-4 bg-white border-b border-gray-200">
             {!sidebarCollapsed && (
@@ -132,7 +139,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Menu className="h-4 w-4" />
             </Button>
           </div>
-          <SidebarContent navigation={updatedNavigation} collapsed={sidebarCollapsed} />
+          <SidebarContent
+            navigation={updatedNavigation}
+            collapsed={sidebarCollapsed}
+          />
         </div>
       </div>
 
@@ -148,13 +158,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           >
             <Menu className="h-4 w-4" />
           </Button>
-          
+
           <div className="flex-1 px-4 flex justify-between items-center">
             <div className="flex-1" />
-            
+
             <div className="ml-4 flex items-center md:ml-6 space-x-4">
               {/* Notifications */}
-              <Button variant="ghost" size="sm" className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative"
+                suppressHydrationWarning
+              >
                 <Bell className="h-4 w-4" />
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
                   3
@@ -164,7 +179,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               {/* Profile dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Button
+                    variant="ghost"
+                    className="relative h-8 w-8 rounded-full"
+                    suppressHydrationWarning
+                  >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src="/avatars/01.png" alt="Admin" />
                       <AvatarFallback>AD</AvatarFallback>
@@ -174,7 +193,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">Admin User</p>
+                      <p className="text-sm font-medium leading-none">
+                        Admin User
+                      </p>
                       <p className="text-xs leading-none text-muted-foreground">
                         admin@yoye.com
                       </p>
@@ -206,12 +227,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </main>
       </div>
     </div>
-  )
+  );
 }
 
 interface SidebarContentProps {
-  navigation: typeof navigation
-  collapsed: boolean
+  navigation: typeof navigation;
+  collapsed: boolean;
 }
 
 function SidebarContent({ navigation, collapsed }: SidebarContentProps) {
@@ -228,14 +249,16 @@ function SidebarContent({ navigation, collapsed }: SidebarContentProps) {
                 item.current
                   ? "bg-gray-100 text-gray-900"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                collapsed && "justify-center"
+                collapsed && "justify-center",
               )}
             >
               <item.icon
                 className={cn(
                   "flex-shrink-0 h-5 w-5",
-                  item.current ? "text-gray-500" : "text-gray-400 group-hover:text-gray-500",
-                  !collapsed && "mr-3"
+                  item.current
+                    ? "text-gray-500"
+                    : "text-gray-400 group-hover:text-gray-500",
+                  !collapsed && "mr-3",
                 )}
                 aria-hidden="true"
               />
@@ -245,5 +268,5 @@ function SidebarContent({ navigation, collapsed }: SidebarContentProps) {
         </nav>
       </ScrollArea>
     </div>
-  )
+  );
 }
