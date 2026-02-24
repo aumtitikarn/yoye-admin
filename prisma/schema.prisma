@@ -1,0 +1,197 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  line      String?
+  phone     String?
+  role      String @default("TEAM_MEMBER")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  bookings Booking[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Event {
+  id          String     @id @default(cuid())
+  name        String
+  type      String @default("TICKET")
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  status    String @default("DRAFT")
+  createdBy   String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Ticket Mode fields
+  ticketZones  TicketZone[]
+  serviceFee   Float?
+  depositRate  Float?
+
+  // Form Mode fields
+  formFields   FormField[]
+  serviceFeeFixed Float?
+
+  // Common fields
+  paymentMethod String @default("DEPOSIT")
+  fulfillmentMethod String @default("E_TICKET")
+
+  bookings Booking[]
+
+  @@map("events")
+}
+
+model TicketZone {
+  id     String @id @default(cuid())
+  eventId String
+  name   String
+  price  Float
+  fee    Float
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("ticket_zones")
+}
+
+model FormField {
+  id     String     @id @default(cuid())
+  eventId String
+  label  String
+  type   String
+  required Boolean @default(false)
+  options String?
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("form_fields")
+}
+
+model Booking {
+  id          String       @id @default(cuid())
+  eventId     String
+  userId      String
+  status      String @default("PENDING")
+  depositPaid Float        @default(0)
+  totalPaid   Float        @default(0)
+  refundAmount Float        @default(0)
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  paymentSlips PaymentSlip[]
+  fulfillment Fulfillment?
+  statusLogs   BookingStatusLog[]
+
+  @@map("bookings")
+}
+
+model PaymentSlip {
+  id        String       @id @default(cuid())
+  bookingId String
+  type      String
+  amount    Float
+  imageUrl  String
+  verified  Boolean      @default(false)
+  verifiedBy String?
+  verifiedAt DateTime?
+  notes     String?
+  createdAt DateTime     @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("payment_slips")
+}
+
+model Fulfillment {
+  id           String           @id @default(cuid())
+  bookingId    String           @unique
+  type         String
+  trackingNumber String?
+  pickupDateTime DateTime?
+  pickupLocation String?
+  qrCode       String?
+  delivered    Boolean          @default(false)
+  deliveredAt  DateTime?
+  deliveredBy  String?
+  notes        String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("fulfillments")
+}
+
+model BookingStatusLog {
+  id       String @id @default(cuid())
+  bookingId String
+  status   String
+  changedBy String
+  notes    String?
+  createdAt DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_status_logs")
+}
+
