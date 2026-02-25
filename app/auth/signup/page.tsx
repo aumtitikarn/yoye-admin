@@ -50,29 +50,11 @@ export default function SignUpPage() {
       return;
     }
 
-    try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "เกิดข้อผิดพลาดในการลงทะเบียน");
-        return;
-      }
-
-      // Registration successful
-      router.push("/auth/signin?message=registration-success");
-    } catch (error) {
-      setError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
-    } finally {
+    // Skip backend for demo purposes – go straight to dashboard
+    setTimeout(() => {
+      router.push("/dashboard");
       setLoading(false);
-    }
+    }, 500);
   };
 
   return (

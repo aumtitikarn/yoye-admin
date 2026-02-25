@@ -28,7 +28,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 const navigation = [
@@ -84,6 +84,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const updatedNavigation = navigation.map((item) => ({
     ...item,
@@ -194,7 +195,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <span>Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      router.push("/auth/signin");
+                    }}
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>

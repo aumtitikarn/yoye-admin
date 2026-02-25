@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +17,8 @@ import { Eye, EyeOff, LogIn } from "lucide-react";
 import Link from "next/link";
 
 export default function SignInPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("admin@gmail.com");
+  const [password, setPassword] = useState("12345678");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,36 +29,12 @@ export default function SignInPage() {
     setLoading(true);
     setError("");
 
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "อีเมลหรือรหัสผ่านไม่ถูกต้อง");
-        return;
-      }
-
-      // Login successful - for demo, just redirect to dashboard
-      // In production, you'd handle session/token here
+    // Skip backend for now – assume success and go straight to dashboard
+    setTimeout(() => {
       router.push("/dashboard");
-    } catch (error) {
-      setError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
-    } finally {
       setLoading(false);
-    }
+    }, 500);
   };
-
-  useEffect(() => {
-    setEmail("admin@gmail.com");
-    setPassword("12345678");
-  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
