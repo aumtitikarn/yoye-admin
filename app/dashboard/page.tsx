@@ -1,11 +1,17 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Calendar,
   Users,
@@ -19,7 +25,7 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-} from "lucide-react"
+} from "lucide-react";
 
 export default function DashboardOverview() {
   // Mock data for demo
@@ -38,7 +44,7 @@ export default function DashboardOverview() {
       refundsAccumulated: 12000,
       outstandingPayments: 8500,
     },
-  }
+  };
 
   const recentAlerts = [
     {
@@ -62,33 +68,33 @@ export default function DashboardOverview() {
       time: "10 นาทีที่แล้ว",
       priority: "low",
     },
-  ]
+  ];
 
   const getAlertIcon = (type: string) => {
     switch (type) {
       case "slip":
-        return <CreditCard className="h-4 w-4" />
+        return <CreditCard className="h-4 w-4" />;
       case "self_card":
-        return <CheckCircle className="h-4 w-4" />
+        return <CheckCircle className="h-4 w-4" />;
       case "form":
-        return <FileText className="h-4 w-4" />
+        return <FileText className="h-4 w-4" />;
       default:
-        return <Bell className="h-4 w-4" />
+        return <Bell className="h-4 w-4" />;
     }
-  }
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "high":
-        return "bg-red-100 text-red-800 border-red-200"
+        return "bg-red-100 text-red-800 border-red-200";
       case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "low":
-        return "bg-green-100 text-green-800 border-green-200"
+        return "bg-green-100 text-green-800 border-green-200";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -110,7 +116,9 @@ export default function DashboardOverview() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">คิวรออนุมัติ</span>
-                <Badge variant="secondary">{stats.ticketMode.pendingApproval}</Badge>
+                <Badge variant="secondary">
+                  {stats.ticketMode.pendingApproval}
+                </Badge>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">กำลังดำเนินการ</span>
@@ -118,7 +126,9 @@ export default function DashboardOverview() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">จำนวนที่กดได้รวม</span>
-                <Badge variant="default">{stats.ticketMode.totalCompleted}</Badge>
+                <Badge variant="default">
+                  {stats.ticketMode.totalCompleted}
+                </Badge>
               </div>
             </div>
           </CardContent>
@@ -154,55 +164,28 @@ export default function DashboardOverview() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">มัดจำถืออยู่</span>
-                <span className="text-sm font-medium">฿{stats.finance.depositsHeld.toLocaleString()}</span>
+                <span className="text-sm font-medium">
+                  ฿{stats.finance.depositsHeld.toLocaleString()}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">เงินคืนสะสม</span>
-                <span className="text-sm font-medium text-red-600">฿{stats.finance.refundsAccumulated.toLocaleString()}</span>
+                <span className="text-sm font-medium text-red-600">
+                  ฿{stats.finance.refundsAccumulated.toLocaleString()}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">ค้างชำระ</span>
-                <span className="text-sm font-medium text-orange-600">฿{stats.finance.outstandingPayments.toLocaleString()}</span>
+                <span className="text-sm font-medium text-orange-600">
+                  ฿{stats.finance.outstandingPayments.toLocaleString()}
+                </span>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Real-time Alerts */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Real-time Alerts
-            </CardTitle>
-            <CardDescription>แจ้งเตือนล่าสุด</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-64">
-              <div className="space-y-3">
-                {recentAlerts.map((alert) => (
-                  <div key={alert.id} className="flex items-start gap-3 p-3 rounded-lg border">
-                    <div className="flex-shrink-0 mt-0.5">
-                      {getAlertIcon(alert.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">
-                        {alert.message}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">{alert.time}</p>
-                    </div>
-                    <Badge className={getPriorityColor(alert.priority)}>
-                      {alert.priority}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Quick Actions */}
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -247,13 +230,17 @@ export default function DashboardOverview() {
                 </div>
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium">คิว #1234 ได้รับการอนุมัติแล้ว</p>
-                <p className="text-xs text-gray-500">โดย Admin - 5 นาทีที่แล้ว</p>
+                <p className="text-sm font-medium">
+                  คิว #1234 ได้รับการอนุมัติแล้ว
+                </p>
+                <p className="text-xs text-gray-500">
+                  โดย Admin - 5 นาทีที่แล้ว
+                </p>
               </div>
             </div>
-            
+
             <Separator />
-            
+
             <div className="flex items-center gap-4">
               <div className="flex-shrink-0">
                 <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -261,13 +248,17 @@ export default function DashboardOverview() {
                 </div>
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium">สลิปจากลูกค้า #5678 ได้รับการตรวจสอบแล้ว</p>
-                <p className="text-xs text-gray-500">โดย Staff - 15 นาทีที่แล้ว</p>
+                <p className="text-sm font-medium">
+                  สลิปจากลูกค้า #5678 ได้รับการตรวจสอบแล้ว
+                </p>
+                <p className="text-xs text-gray-500">
+                  โดย Staff - 15 นาทีที่แล้ว
+                </p>
               </div>
             </div>
-            
+
             <Separator />
-            
+
             <div className="flex items-center gap-4">
               <div className="flex-shrink-0">
                 <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center">
@@ -275,7 +266,9 @@ export default function DashboardOverview() {
                 </div>
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium">ฟอร์มใหม่จากลูกค้า #9012 รอการตรวจสอบ</p>
+                <p className="text-sm font-medium">
+                  ฟอร์มใหม่จากลูกค้า #9012 รอการตรวจสอบ
+                </p>
                 <p className="text-xs text-gray-500">30 นาทีที่แล้ว</p>
               </div>
             </div>
@@ -283,5 +276,5 @@ export default function DashboardOverview() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

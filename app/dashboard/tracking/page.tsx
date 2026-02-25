@@ -414,7 +414,7 @@ export default function PaymentSummaryPage() {
                             onClick={() => handleManageTicket(item)}
                           >
                             <Package className="h-4 w-4 mr-1" />
-                            จัดการบัตร
+                            จัดการบิล
                           </Button>
                         </div>
                       </td>
@@ -435,9 +435,7 @@ export default function PaymentSummaryPage() {
         >
           <DialogHeader className="flex-shrink-0 pb-4 border-b">
             <DialogTitle>
-              {dialogMode === "create"
-                ? "สร้างบิลค่ากด / จัดการบัตร"
-                : "จัดการบัตร"}
+              {dialogMode === "create" ? "สร้างบิลค่ากด" : "จัดการบิล"}
             </DialogTitle>
             <DialogDescription>
               {selectedItem &&

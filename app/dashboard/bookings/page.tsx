@@ -309,10 +309,6 @@ export default function BookingManagement() {
                             </DropdownMenuItem>
                           </>
                         )}
-                        <DropdownMenuItem>
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          แจ้งเตือน
-                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
