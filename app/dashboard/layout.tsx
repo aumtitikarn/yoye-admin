@@ -58,13 +58,13 @@ const navigation = [
   },
   {
     name: "Fulfillment & Logistics",
-    href: "/dashboard/fulfillment",
+    href: "/dashboard/tracking",
     icon: Package,
     current: false,
   },
   {
     name: "Financial Report",
-    href: "/dashboard/reports",
+    href: "/dashboard/finance",
     icon: FileText,
     current: false,
   },
@@ -163,19 +163,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex-1" />
 
             <div className="ml-4 flex items-center md:ml-6 space-x-4">
-              {/* Notifications */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="relative"
-                suppressHydrationWarning
-              >
-                <Bell className="h-4 w-4" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                  3
-                </Badge>
-              </Button>
-
               {/* Profile dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

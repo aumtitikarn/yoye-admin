@@ -1,16 +1,40 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Separator } from "@/components/ui/separator"
-import { Label } from "@/components/ui/label"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -18,7 +42,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import {
   Search,
   Filter,
@@ -33,10 +57,42 @@ import {
   RefreshCw,
   FileImage,
   AlertTriangle,
-} from "lucide-react"
+  MoreVertical,
+} from "lucide-react";
+
+type PaymentSlip = {
+  id: string;
+  bookingId: string;
+  bookingName: string;
+  customerName: string;
+  type: string;
+  amount: number;
+  systemAmount: number;
+  slipAmount: number;
+  status: string;
+  imageUrl: string;
+  createdAt: string;
+  verifiedBy?: string;
+  verifiedAt?: string;
+  notes?: string;
+};
+
+type RefundRequest = {
+  id: string;
+  bookingId: string;
+  bookingName: string;
+  customerName: string;
+  refundAmount: number;
+  reason: string;
+  status: string;
+  createdAt: string;
+  processedBy?: string;
+  processedAt?: string;
+  transferProof?: string;
+};
 
 export default function PaymentManagement() {
-  const [paymentSlips, setPaymentSlips] = useState([
+  const [paymentSlips, setPaymentSlips] = useState<PaymentSlip[]>([
     {
       id: "PS001",
       bookingId: "BK001",
@@ -79,9 +135,9 @@ export default function PaymentManagement() {
       createdAt: "2024-03-08 16:20",
       notes: "ยอดเงินไม่ตรงกับระบบ",
     },
-  ])
+  ]);
 
-  const [refundRequests, setRefundRequests] = useState([
+  const [refundRequests, setRefundRequests] = useState<RefundRequest[]>([
     {
       id: "RF001",
       bookingId: "BK001",
@@ -105,109 +161,122 @@ export default function PaymentManagement() {
       processedBy: "Admin",
       transferProof: "/api/placeholder/300/200",
     },
-  ])
+  ]);
 
-  const [selectedSlip, setSelectedSlip] = useState<any>(null)
-  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
-  const [selectedTab, setSelectedTab] = useState("deposits")
-  const [searchTerm, setSearchTerm] = useState("")
-  const [verificationNotes, setVerificationNotes] = useState("")
+  const [selectedSlip, setSelectedSlip] = useState<PaymentSlip | null>(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [selectedTab, setSelectedTab] = useState("deposits");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [verificationNotes, setVerificationNotes] = useState("");
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "PENDING":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-yellow-100 text-yellow-800";
       case "VERIFIED":
-        return "bg-green-100 text-green-800"
+        return "bg-green-100 text-green-800";
       case "REJECTED":
-        return "bg-red-100 text-red-800"
+        return "bg-red-100 text-red-800";
       case "APPROVED":
-        return "bg-green-100 text-green-800"
+        return "bg-green-100 text-green-800";
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-gray-100 text-gray-800";
     }
-  }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "PENDING":
-        return <Clock className="h-4 w-4" />
+        return <Clock className="h-4 w-4" />;
       case "VERIFIED":
-        return <CheckCircle className="h-4 w-4" />
+        return <CheckCircle className="h-4 w-4" />;
       case "REJECTED":
-        return <XCircle className="h-4 w-4" />
+        return <XCircle className="h-4 w-4" />;
       case "APPROVED":
-        return <CheckCircle className="h-4 w-4" />
+        return <CheckCircle className="h-4 w-4" />;
       default:
-        return <AlertCircle className="h-4 w-4" />
+        return <AlertCircle className="h-4 w-4" />;
     }
-  }
+  };
 
   const getTypeLabel = (type: string) => {
     switch (type) {
       case "DEPOSIT":
-        return "มัดจำ"
+        return "มัดจำ";
       case "PAYMENT":
-        return "ค่าบัตร/สินค้า"
+        return "ค่าบัตร/สินค้า";
       case "SERVICE_FEE":
-        return "ค่ากด/ค่าบริการ"
+        return "ค่ากด/ค่าบริการ";
       default:
-        return type
+        return type;
     }
-  }
+  };
 
   const filteredSlips = paymentSlips.filter((slip) => {
-    const matchesTab = selectedTab === "all" || 
+    const matchesTab =
+      selectedTab === "all" ||
       (selectedTab === "deposits" && slip.type === "DEPOSIT") ||
       (selectedTab === "payments" && slip.type === "PAYMENT") ||
-      (selectedTab === "service" && slip.type === "SERVICE_FEE")
-    
-    const matchesSearch = slip.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         slip.bookingId.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    return matchesTab && matchesSearch
-  })
+      (selectedTab === "service" && slip.type === "SERVICE_FEE");
 
-  const handleVerification = (slipId: string, status: "VERIFIED" | "REJECTED") => {
-    setPaymentSlips(prev => prev.map(slip => 
-      slip.id === slipId 
-        ? { 
-            ...slip, 
-            status, 
-            verifiedBy: "Admin", 
-            verifiedAt: new Date().toISOString(),
-            notes: verificationNotes
-          }
-        : slip
-    ))
-    setIsDetailDialogOpen(false)
-    setVerificationNotes("")
-  }
+    const matchesSearch =
+      slip.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      slip.bookingId.toLowerCase().includes(searchTerm.toLowerCase());
+
+    return matchesTab && matchesSearch;
+  });
+
+  const handleVerification = (
+    slipId: string,
+    status: "VERIFIED" | "REJECTED",
+  ) => {
+    setPaymentSlips((prev) =>
+      prev.map((slip) =>
+        slip.id === slipId
+          ? {
+              ...slip,
+              status,
+              verifiedBy: "Admin",
+              verifiedAt: new Date().toISOString(),
+              ...(verificationNotes && { notes: verificationNotes }),
+            }
+          : slip,
+      ),
+    );
+    setIsDetailDialogOpen(false);
+    setVerificationNotes("");
+  };
 
   const handleRefund = (refundId: string, status: "APPROVED" | "REJECTED") => {
-    setRefundRequests(prev => prev.map(refund => 
-      refund.id === refundId 
-        ? { 
-            ...refund, 
-            status, 
-            processedBy: "Admin", 
-            processedAt: new Date().toISOString()
-          }
-        : refund
-    ))
-  }
+    setRefundRequests((prev) =>
+      prev.map((refund) =>
+        refund.id === refundId
+          ? {
+              ...refund,
+              status,
+              processedBy: "Admin",
+              processedAt: new Date().toISOString(),
+            }
+          : refund,
+      ),
+    );
+  };
 
-  const openSlipDetail = (slip: any) => {
-    setSelectedSlip(slip)
-    setIsDetailDialogOpen(true)
-  }
+  const openSlipDetail = (slip: PaymentSlip) => {
+    setSelectedSlip(slip);
+    setIsDetailDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Payment & Slip Verification</h1>
-        <p className="text-gray-600">ตรวจสอบสลิปการชำระเงินและจัดการการคืนเงิน</p>
+        <h1 className="text-3xl font-bold text-gray-900">
+          Payment & Slip Verification
+        </h1>
+        <p className="text-gray-600">
+          ตรวจสอบสลิปการชำระเงินและจัดการการคืนเงิน
+        </p>
       </div>
 
       {/* Payment Slips Section */}
@@ -247,7 +316,7 @@ export default function PaymentManagement() {
               <TabsTrigger value="payments">สลิปค่าบัตร/สินค้า</TabsTrigger>
               <TabsTrigger value="service">สลิปค่ากด/ค่าบริการ</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value={selectedTab} className="mt-4">
               <Table>
                 <TableHeader>
@@ -275,7 +344,13 @@ export default function PaymentManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell>฿{slip.systemAmount}</TableCell>
-                      <TableCell className={slip.slipAmount !== slip.systemAmount ? "text-red-600 font-medium" : ""}>
+                      <TableCell
+                        className={
+                          slip.slipAmount !== slip.systemAmount
+                            ? "text-red-600 font-medium"
+                            : ""
+                        }
+                      >
                         ฿{slip.slipAmount}
                         {slip.slipAmount !== slip.systemAmount && (
                           <AlertTriangle className="h-3 w-3 inline ml-1" />
@@ -289,36 +364,47 @@ export default function PaymentManagement() {
                       </TableCell>
                       <TableCell>{slip.createdAt}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => openSlipDetail(slip)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          
-                          {slip.status === "PENDING" && (
-                            <div className="flex gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="text-green-600"
-                                onClick={() => handleVerification(slip.id, "VERIFIED")}
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="text-red-600"
-                                onClick={() => handleVerification(slip.id, "REJECTED")}
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              suppressHydrationWarning
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => openSlipDetail(slip)}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              ดูรายละเอียด
+                            </DropdownMenuItem>
+                            {slip.status === "PENDING" && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleVerification(slip.id, "VERIFIED")
+                                  }
+                                  className="text-green-600"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  ยืนยัน
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleVerification(slip.id, "REJECTED")
+                                  }
+                                  className="text-red-600"
+                                >
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  ปฏิเสธ
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -360,8 +446,12 @@ export default function PaymentManagement() {
                   <TableCell className="font-medium">{refund.id}</TableCell>
                   <TableCell>{refund.bookingId}</TableCell>
                   <TableCell>{refund.customerName}</TableCell>
-                  <TableCell className="font-medium">฿{refund.refundAmount}</TableCell>
-                  <TableCell className="max-w-xs truncate">{refund.reason}</TableCell>
+                  <TableCell className="font-medium">
+                    ฿{refund.refundAmount}
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate">
+                    {refund.reason}
+                  </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(refund.status)}>
                       {getStatusIcon(refund.status)}
@@ -370,32 +460,45 @@ export default function PaymentManagement() {
                   </TableCell>
                   <TableCell>{refund.createdAt}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      
-                      {refund.status === "PENDING" && (
-                        <div className="flex gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="text-green-600"
-                            onClick={() => handleRefund(refund.id, "APPROVED")}
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="text-red-600"
-                            onClick={() => handleRefund(refund.id, "REJECTED")}
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          suppressHydrationWarning
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Eye className="h-4 w-4 mr-2" />
+                          ดูรายละเอียด
+                        </DropdownMenuItem>
+                        {refund.status === "PENDING" && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleRefund(refund.id, "APPROVED")
+                              }
+                              className="text-green-600"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              อนุมัติ
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleRefund(refund.id, "REJECTED")
+                              }
+                              className="text-red-600"
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              ปฏิเสธ
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
@@ -413,7 +516,7 @@ export default function PaymentManagement() {
               ตรวจสอบความถูกต้องของสลิปการชำระเงิน
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedSlip && (
             <div className="space-y-6">
               {/* Slip Image */}
@@ -447,7 +550,9 @@ export default function PaymentManagement() {
                     <CardTitle className="text-lg">ยอดเงินในสลิป</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className={`text-2xl font-bold ${selectedSlip.slipAmount !== selectedSlip.systemAmount ? "text-red-600" : "text-green-600"}`}>
+                    <div
+                      className={`text-2xl font-bold ${selectedSlip.slipAmount !== selectedSlip.systemAmount ? "text-red-600" : "text-green-600"}`}
+                    >
                       ฿{selectedSlip.slipAmount}
                     </div>
                     {selectedSlip.slipAmount !== selectedSlip.systemAmount && (
@@ -492,16 +597,20 @@ export default function PaymentManagement() {
               {/* Actions */}
               {selectedSlip.status === "PENDING" && (
                 <div className="flex justify-end gap-2">
-                  <Button 
+                  <Button
                     variant="outline"
                     className="text-red-600"
-                    onClick={() => handleVerification(selectedSlip.id, "REJECTED")}
+                    onClick={() =>
+                      handleVerification(selectedSlip.id, "REJECTED")
+                    }
                   >
                     <XCircle className="h-4 w-4 mr-2" />
                     ปฏิเสธสลิป
                   </Button>
-                  <Button 
-                    onClick={() => handleVerification(selectedSlip.id, "VERIFIED")}
+                  <Button
+                    onClick={() =>
+                      handleVerification(selectedSlip.id, "VERIFIED")
+                    }
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
                     ยืนยันสลิป
@@ -514,12 +623,15 @@ export default function PaymentManagement() {
                   <div className="flex items-center gap-2">
                     {getStatusIcon(selectedSlip.status)}
                     <span className="font-medium">
-                      สลิปนี้ได้รับการ{selectedSlip.status === "VERIFIED" ? "ยืนยัน" : "ปฏิเสธ"}แล้ว
+                      สลิปนี้ได้รับการ
+                      {selectedSlip.status === "VERIFIED" ? "ยืนยัน" : "ปฏิเสธ"}
+                      แล้ว
                     </span>
                   </div>
                   {selectedSlip.verifiedBy && (
                     <p className="text-sm text-gray-600 mt-1">
-                      โดย {selectedSlip.verifiedBy} เมื่อ {selectedSlip.verifiedAt}
+                      โดย {selectedSlip.verifiedBy} เมื่อ{" "}
+                      {selectedSlip.verifiedAt}
                     </p>
                   )}
                   {selectedSlip.notes && (
@@ -534,5 +646,5 @@ export default function PaymentManagement() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

@@ -31,6 +31,7 @@ import {
   Settings,
   Trash2,
   MoreVertical,
+  Eye,
 } from "lucide-react";
 
 export type EventStatus = "ACTIVE" | "DRAFT" | "CLOSED";
@@ -43,6 +44,7 @@ export type EventItem = {
   startDate: string;
   endDate: string;
   bookings: number;
+  totalCapacity: number;
 };
 
 type EventsTableProps = Readonly<{
@@ -70,7 +72,8 @@ export function EventsTable({ events }: EventsTableProps) {
               <TableHead>ชื่องาน</TableHead>
               <TableHead>ประเภท</TableHead>
               <TableHead>สถานะ</TableHead>
-              <TableHead>จำนวนคิว</TableHead>
+              <TableHead>จำนวนคิวทั้งหมด</TableHead>
+              <TableHead>เหลือจำนวนคิว</TableHead>
               <TableHead>การจัดการ</TableHead>
             </TableRow>
           </TableHeader>
@@ -104,7 +107,18 @@ export function EventsTable({ events }: EventsTableProps) {
                     suppressHydrationWarning
                   />
                 </TableCell>
-                <TableCell>{event.bookings}</TableCell>
+                <TableCell>{event.totalCapacity}</TableCell>
+                <TableCell>
+                  <span
+                    className={
+                      event.totalCapacity - event.bookings <= 0
+                        ? "text-red-600 font-medium"
+                        : ""
+                    }
+                  >
+                    {event.totalCapacity - event.bookings}
+                  </span>
+                </TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -118,12 +132,12 @@ export function EventsTable({ events }: EventsTableProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem>
-                        <Edit className="h-4 w-4 mr-2" />
-                        แก้ไข
+                        <Eye className="h-4 w-4 mr-2" />
+                        ดูรายละเอียด
                       </DropdownMenuItem>
                       <DropdownMenuItem>
-                        <Settings className="h-4 w-4 mr-2" />
-                        ตั้งค่า
+                        <Edit className="h-4 w-4 mr-2" />
+                        แก้ไข
                       </DropdownMenuItem>
                       <DropdownMenuItem className="text-red-600">
                         <Trash2 className="h-4 w-4 mr-2" />

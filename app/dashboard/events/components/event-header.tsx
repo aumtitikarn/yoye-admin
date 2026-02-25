@@ -1,21 +1,10 @@
 "use client";
 
-import { Dispatch, SetStateAction } from "react";
-import { CreateEventDialog } from "./create-event-dialog";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import Link from "next/link";
 
-type EventHeaderProps = Readonly<{
-  isCreateDialogOpen: boolean;
-  setIsCreateDialogOpen: Dispatch<SetStateAction<boolean>>;
-  eventType: "TICKET" | "FORM";
-  setEventType: Dispatch<SetStateAction<"TICKET" | "FORM">>;
-}>;
-
-export function EventHeader({
-  isCreateDialogOpen,
-  setIsCreateDialogOpen,
-  eventType,
-  setEventType,
-}: EventHeaderProps) {
+export function EventHeader() {
   return (
     <div className="flex justify-between items-center">
       <div>
@@ -25,12 +14,12 @@ export function EventHeader({
         </p>
       </div>
 
-      <CreateEventDialog
-        isOpen={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        eventType={eventType}
-        onEventTypeChange={setEventType}
-      />
+      <Link href="/dashboard/events/create">
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          สร้างงานใหม่
+        </Button>
+      </Link>
     </div>
   );
 }
