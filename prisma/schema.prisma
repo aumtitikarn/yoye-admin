@@ -10,27 +10,120 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  firstName String
-  lastName  String
-  line      String?
-  phone     String?
-  role      String @default("TEAM_MEMBER")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum AdminRole {
+  ADMIN
+  SUPER_ADMIN
+}
 
-  accounts Account[]
-  sessions Session[]
-  bookings Booking[]
+enum EventType {
+  TICKET
+  FORM
+}
+
+enum EventStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum EventCategory {
+  CONCERT
+  PRODUCT_PREORDER
+  FAN_MEETING
+  OTHER
+}
+
+enum BookingStatus {
+  PENDING_APPROVAL
+  IN_PROGRESS
+  READY_FOR_FULFILLMENT
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  REFUNDED
+}
+
+enum PaymentSlipType {
+  DEPOSIT
+  TICKET
+  PRODUCT
+  SERVICE_FEE
+  OTHER
+}
+
+enum PaymentSlipStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum FulfillmentType {
+  ETICKET
+  PICKUP
+  DELIVERY
+}
+
+enum DeliveryStatus {
+  NOT_STARTED
+  WAITING_PICKUP
+  READY_FOR_PICKUP
+  PICKED_UP
+  WAITING_DELIVERY
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum DepositTransactionType {
+  HELD
+  USED
+  FORFEITED
+  REFUNDED
+}
+
+enum RefundStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum InsightMode {
+  TICKET
+  FORM
+}
+
+model User {
+  id         String    @id @default(cuid())
+  email      String    @unique
+  password   String
+  firstName  String
+  lastName   String
+  line       String?
+  phone      String?
+  role       AdminRole @default(ADMIN)
+  lastLogin  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  accounts   Account[]
+  sessions   Session[]
+  bookings   Booking[]
+  activities ActivityLog[]
 
   @@map("users")
 }
 
 model Account {
-  id                String  @id @default(cuid())
+  id                String @id @default(cuid())
   userId            String
   type              String
   provider          String
@@ -68,114 +161,242 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
+model Customer {
+  id        String   @id @default(cuid())
+  fullName  String
+  nickname  String?
+  email     String?
+  phone     String?
+  lineId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings  Booking[]
+
+  @@map("customers")
+}
+
 model Event {
-  id          String     @id @default(cuid())
-  name        String
-  type      String @default("TICKET")
-  description String?
-  startDate   DateTime
-  endDate     DateTime
-  status    String @default("DRAFT")
-  createdBy   String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id             String        @id @default(cuid())
+  name           String
+  type           EventType
+  category       EventCategory @default(OTHER)
+  description    String?
+  posterUrl      String?
+  remarks        String?
+  status         EventStatus   @default(DRAFT)
+  startDate      DateTime
+  endDate        DateTime
+  isActive       Boolean       @default(true)
+  createdBy      String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  serviceFee     Float?        // ticket mode default fee
+  depositRate    Float?
+  serviceFeeFixed Float?       // form mode fixed fee
 
-  // Ticket Mode fields
-  ticketZones  TicketZone[]
-  serviceFee   Float?
-  depositRate  Float?
-
-  // Form Mode fields
-  formFields   FormField[]
-  serviceFeeFixed Float?
-
-  // Common fields
-  paymentMethod String @default("DEPOSIT")
-  fulfillmentMethod String @default("E_TICKET")
-
-  bookings Booking[]
+  showtimes      EventShowtime[]
+  customFields   EventCustomField[]
+  bookings       Booking[]
+  insights       EventInsight[]
 
   @@map("events")
 }
 
-model TicketZone {
-  id     String @id @default(cuid())
-  eventId String
-  name   String
-  price  Float
-  fee    Float
+model EventShowtime {
+  id         String   @id @default(cuid())
+  eventId    String
+  startsAt   DateTime
+  endsAt     DateTime
+  venue      String?
+  capacity   Int
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event      Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketZones TicketZone[]
+
+  @@map("event_showtimes")
+}
+
+model TicketZone {
+  id           String   @id @default(cuid())
+  eventId      String
+  showtimeId   String
+  name         String
+  price        Float
+  serviceFee   Float
+  capacity     Int
+  remainingCap Int       @default(0)
+
+  event    Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  showtime EventShowtime @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
 
   @@map("ticket_zones")
 }
 
-model FormField {
-  id     String     @id @default(cuid())
-  eventId String
-  label  String
-  type   String
-  required Boolean @default(false)
-  options String?
+model EventCustomField {
+  id        String     @id @default(cuid())
+  eventId   String
+  label     String
+  mode      InsightMode
+  required  Boolean    @default(false)
+  options   Json?
+  deleted   Boolean    @default(false)
+  createdAt DateTime   @default(now())
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
-  @@map("form_fields")
+  @@map("event_custom_fields")
+}
+
+model EventInsight {
+  id        String   @id @default(cuid())
+  eventId   String
+  title     String
+  valueType String
+  isRequired Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_insights")
 }
 
 model Booking {
-  id          String       @id @default(cuid())
-  eventId     String
-  userId      String
-  status      String @default("PENDING")
-  depositPaid Float        @default(0)
-  totalPaid   Float        @default(0)
-  refundAmount Float        @default(0)
-  notes       String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id             String        @id @default(cuid())
+  queueCode      String        @unique
+  eventId        String
+  customerId     String
+  status         BookingStatus @default(PENDING_APPROVAL)
+  paymentStatus  PaymentStatus @default(UNPAID)
+  amount         Float         @default(0)
+  serviceFee     Float         @default(0)
+  shippingFee    Float         @default(0)
+  vatAmount      Float         @default(0)
+  depositPaid    Float         @default(0)
+  totalPaid      Float         @default(0)
+  refundAmount   Float         @default(0)
+  notes          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
-  event Event @relation(fields: [eventId], references: [id])
-  user  User  @relation(fields: [userId], references: [id])
+  event          Event     @relation(fields: [eventId], references: [id])
+  customer       Customer  @relation(fields: [customerId], references: [id])
+  user           User?     @relation(fields: [assignedAdminId], references: [id])
+  assignedAdminId String?
 
-  paymentSlips PaymentSlip[]
-  fulfillment Fulfillment?
-  statusLogs   BookingStatusLog[]
+  paymentSlips   PaymentSlip[]
+  fulfillment    Fulfillment?
+  statusLogs     BookingStatusLog[]
+  billingRecord  BillingRecord?
+  refunds        RefundRequest[]
+  deposits       DepositTransaction[]
+  formSubmission FormSubmission?
 
   @@map("bookings")
 }
 
 model PaymentSlip {
-  id        String       @id @default(cuid())
-  bookingId String
-  type      String
-  amount    Float
-  imageUrl  String
-  verified  Boolean      @default(false)
-  verifiedBy String?
-  verifiedAt DateTime?
-  notes     String?
-  createdAt DateTime     @default(now())
+  id          String            @id @default(cuid())
+  bookingId   String
+  type        PaymentSlipType
+  status      PaymentSlipStatus @default(PENDING)
+  systemAmount Float
+  slipAmount  Float
+  imageUrl    String
+  reviewerId  String?
+  reviewedAt  DateTime?
+  notes       String?
+  createdAt   DateTime          @default(now())
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reviewer User?  @relation(fields: [reviewerId], references: [id])
 
   @@map("payment_slips")
 }
 
-model Fulfillment {
-  id           String           @id @default(cuid())
-  bookingId    String           @unique
-  type         String
-  trackingNumber String?
-  pickupDateTime DateTime?
-  pickupLocation String?
-  qrCode       String?
-  delivered    Boolean          @default(false)
-  deliveredAt  DateTime?
-  deliveredBy  String?
+model BillingRecord {
+  id           String         @id @default(cuid())
+  bookingId    String         @unique
+  billNumber   String         @unique
+  subtotal     Float          @default(0)
+  serviceFee   Float          @default(0)
+  shippingFee  Float          @default(0)
+  vatRate      Float          @default(0.07)
+  vatAmount    Float          @default(0)
+  totalDue     Float          @default(0)
+  paymentStatus PaymentStatus @default(UNPAID)
   notes        String?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("billing_records")
+}
+
+model DepositTransaction {
+  id         String                  @id @default(cuid())
+  bookingId  String?
+  eventId    String?
+  type       DepositTransactionType
+  amount     Float
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  booking Booking? @relation(fields: [bookingId], references: [id])
+  event   Event?   @relation(fields: [eventId], references: [id])
+
+  @@map("deposit_transactions")
+}
+
+model RefundRequest {
+  id            String       @id @default(cuid())
+  bookingId     String
+  paymentSlipId String?
+  nickname      String?
+  bookingRef    String?
+  bankName      String
+  accountNumber String
+  accountType   String?
+  accountHolder String
+  amount        Float
+  status        RefundStatus @default(REQUESTED)
+  reason        String?
+  requestedAt   DateTime     @default(now())
+  processedAt   DateTime?
+  processedById String?
+
+  booking      Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  paymentSlip  PaymentSlip? @relation(fields: [paymentSlipId], references: [id])
+  processedBy  User?      @relation(fields: [processedById], references: [id])
+
+  @@map("refund_requests")
+}
+
+model Fulfillment {
+  id              String         @id @default(cuid())
+  bookingId       String         @unique
+  type            FulfillmentType
+  deliveryStatus  DeliveryStatus @default(NOT_STARTED)
+  pickupDateTime  DateTime?
+  pickupLocation  String?
+  qrCode          String?
+  shippingAddress String?
+  shippingCity    String?
+  shippingPostal  String?
+  recipientName   String?
+  recipientPhone  String?
+  trackingNumber  String?
+  shippingFee     Float?         @default(0)
+  serviceFee      Float?         @default(0)
+  vatAmount       Float?         @default(0)
+  totalCharge     Float?         @default(0)
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
@@ -183,15 +404,41 @@ model Fulfillment {
 }
 
 model BookingStatusLog {
-  id       String @id @default(cuid())
+  id        String   @id @default(cuid())
   bookingId String
-  status   String
+  status    BookingStatus
   changedBy String
-  notes    String?
+  notes     String?
   createdAt DateTime @default(now())
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  admin   User    @relation(fields: [changedBy], references: [id])
 
   @@map("booking_status_logs")
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  userId     String
+  entityType String
+  entityId   String?
+  action     String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("activity_logs")
+}
+
+model FormSubmission {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  formData  Json
+  submittedAt DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("form_submissions")
 }
 

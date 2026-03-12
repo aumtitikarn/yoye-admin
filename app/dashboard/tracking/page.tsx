@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,6 +54,7 @@ type PaymentItem = {
   paymentDate: string;
   ticketFee?: number;
   shippingFee?: number;
+  vatAmount?: number;
   totalAmount?: number;
   fulfillmentType?: FulfillmentType;
   pickupDate?: string;
@@ -81,6 +82,7 @@ const mockPaymentData: PaymentItem[] = [
     paymentDate: "2024-03-10",
     ticketFee: 1500,
     shippingFee: 0,
+    vatAmount: 0,
     totalAmount: 1500,
     fulfillmentType: "ETICKET",
     createdAt: "2024-03-10T10:30:00",
@@ -94,8 +96,9 @@ const mockPaymentData: PaymentItem[] = [
     status: "waiting_pickup_date",
     paymentDate: "2024-03-11",
     ticketFee: 2000,
-    shippingFee: 100,
-    totalAmount: 2100,
+    shippingFee: 0,
+    vatAmount: 0,
+    totalAmount: 2000,
     fulfillmentType: "PICKUP",
     createdAt: "2024-03-11T14:20:00",
   },
@@ -109,11 +112,19 @@ const mockPaymentData: PaymentItem[] = [
     paymentDate: "2024-03-12",
     ticketFee: 800,
     shippingFee: 150,
-    totalAmount: 950,
+    vatAmount: (800 + 150) * 0.07,
+    totalAmount: 800 + 150 + (800 + 150) * 0.07,
     fulfillmentType: "DELIVERY",
     createdAt: "2024-03-12T09:15:00",
   },
 ];
+
+const VAT_RATE = 0.07;
+
+const parseAmount = (value: string) => {
+  const parsed = Number.parseFloat(value || "0");
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
 
 const statusConfig: Record<
   DeliveryStatus,
@@ -278,17 +289,26 @@ export default function PaymentSummaryPage() {
     setTrackingNumber(item.trackingNumber || "");
   };
 
+  const ticketFeeAmount = parseAmount(ticketFee);
+  const shippingFeeAmount =
+    fulfillmentType === "ETICKET" ? 0 : parseAmount(shippingFee);
+  const isDelivery = fulfillmentType === "DELIVERY";
+  const vatTicket = isDelivery ? Number(ticketFeeAmount * VAT_RATE) : 0;
+  const vatShipping = isDelivery ? Number(shippingFeeAmount * VAT_RATE) : 0;
+  const totalDue =
+    ticketFeeAmount + shippingFeeAmount + vatTicket + vatShipping;
+
   const handleSaveBill = () => {
     if (!selectedItem) return;
 
-    const totalAmount =
-      parseFloat(ticketFee || "0") + parseFloat(shippingFee || "0");
-
     console.log("Saving bill:", {
       itemId: selectedItem.id,
-      ticketFee: parseFloat(ticketFee || "0"),
-      shippingFee: parseFloat(shippingFee || "0"),
-      totalAmount,
+      ticketFee: ticketFeeAmount,
+      shippingFee: shippingFeeAmount,
+      vatTicket,
+      vatShipping,
+      vatAmountTotal: vatTicket + vatShipping,
+      totalAmount: totalDue,
       fulfillmentType,
       pickupDate,
       pickupTime,
@@ -491,7 +511,7 @@ export default function PaymentSummaryPage() {
                   </h3>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label>ค่ากดบัตร</Label>
+                      <Label>ค่ากดบัตร (รวมค่าธรรมเนียม)</Label>
                       <Input
                         type="number"
                         placeholder="กรอกค่ากดบัตร"
@@ -515,143 +535,36 @@ export default function PaymentSummaryPage() {
                       )}
                     </div>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm font-medium">
-                      ยอดรวม: ฿
-                      {(
-                        parseFloat(ticketFee || "0") +
-                        parseFloat(shippingFee || "0")
-                      ).toFixed(2)}
-                    </p>
+                  <div className="p-4 bg-gray-50 rounded-lg space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>ค่ากดบัตร (รวมค่าธรรมเนียม)</span>
+                      <span>฿{ticketFeeAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>ค่าส่ง</span>
+                      <span>฿{shippingFeeAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>VAT 7% จากค่ากด</span>
+                      <span>
+                        {isDelivery ? `฿${vatTicket.toFixed(2)}` : "ไม่คิด VAT"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>VAT 7% จากค่าส่ง</span>
+                      <span>
+                        {isDelivery
+                          ? `฿${vatShipping.toFixed(2)}`
+                          : "ไม่คิด VAT"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between font-semibold text-base">
+                      <span>ยอดรวมทั้งหมด</span>
+                      <span>฿{totalDue.toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className="space-y-6 mt-6">
-              {fulfillmentType === "PICKUP" && (
-                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <h4 className="font-medium text-gray-900">
-                    ข้อมูลการรับบัตรหน้างาน
-                  </h4>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>วันและเวลานัดรับบัตร</Label>
-                      <div className="grid gap-2 md:grid-cols-2">
-                        <Input
-                          type="date"
-                          value={pickupDate}
-                          onChange={(e) => setPickupDate(e.target.value)}
-                        />
-                        <Input
-                          type="time"
-                          value={pickupTime}
-                          onChange={(e) => setPickupTime(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid gap-2 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>ชื่อผู้ติดต่อ</Label>
-                        <Input
-                          placeholder="ชื่อผู้ติดต่อ"
-                          value={pickupContactName}
-                          onChange={(e) => setPickupContactName(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>เบอร์โทรผู้ติดต่อ</Label>
-                        <Input
-                          placeholder="เบอร์โทร"
-                          value={pickupContactPhone}
-                          onChange={(e) =>
-                            setPickupContactPhone(e.target.value)
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="grid gap-2 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>สถานที่นัดรับ</Label>
-                        <Input
-                          placeholder="ระบุสถานที่"
-                          value={pickupLocation}
-                          onChange={(e) => setPickupLocation(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>หมายเหตุเพิ่มเติม</Label>
-                        <Input
-                          placeholder="หมายเหตุ"
-                          value={pickupNotes}
-                          onChange={(e) => setPickupNotes(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {fulfillmentType === "DELIVERY" && (
-                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <h4 className="font-medium text-gray-900">ข้อมูลการจัดส่ง</h4>
-                  <div className="space-y-4">
-                    <div className="grid gap-2 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>ชื่อผู้รับ</Label>
-                        <Input
-                          placeholder="ชื่อผู้รับ"
-                          value={pickupContactName}
-                          onChange={(e) => setPickupContactName(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>ที่อยู่จัดส่ง</Label>
-                        <Input
-                          placeholder="กรอกที่อยู่"
-                          value={deliveryAddress}
-                          onChange={(e) => setDeliveryAddress(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>วันที่ส่ง</Label>
-                        <Input
-                          type="date"
-                          value={deliveryDate}
-                          onChange={(e) => setDeliveryDate(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>บริษัทขนส่ง</Label>
-                        <Select
-                          value={deliveryCompany}
-                          onValueChange={setDeliveryCompany}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="เลือกบริษัทขนส่ง" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="kerry">Kerry Express</SelectItem>
-                            <SelectItem value="flash">Flash Express</SelectItem>
-                            <SelectItem value="j&t">J&T Express</SelectItem>
-                            <SelectItem value="thai">Thai Post</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>เลขพัสดุ (Tracking Number)</Label>
-                      <Input
-                        placeholder="กรอกเลขพัสดุ"
-                        value={trackingNumber}
-                        onChange={(e) => setTrackingNumber(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 

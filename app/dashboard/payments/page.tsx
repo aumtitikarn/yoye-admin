@@ -80,8 +80,11 @@ type PaymentSlip = {
 type RefundRequest = {
   id: string;
   bookingId: string;
-  bookingName: string;
-  customerName: string;
+  bookerName: string;
+  customerNickname: string;
+  bankName: string;
+  payoutChannel: string;
+  accountHolder: string;
   refundAmount: number;
   reason: string;
   status: string;
@@ -141,8 +144,11 @@ export default function PaymentManagement() {
     {
       id: "RF001",
       bookingId: "BK001",
-      bookingName: "Concert Night 2024",
-      customerName: "สมชาย ใจดี",
+      bookerName: "สมชาย ใจดี",
+      customerNickname: "คุณเอ",
+      bankName: "กสิกรไทย",
+      payoutChannel: "XXX-1-23456-7",
+      accountHolder: "นายสมชาย ใจดี",
       refundAmount: 50,
       reason: "กดบัตรไม่ได้ครบ 10 ใบ",
       status: "PENDING",
@@ -151,8 +157,11 @@ export default function PaymentManagement() {
     {
       id: "RF002",
       bookingId: "BK002",
-      bookingName: "Product Pre-order",
-      customerName: "สมศรี รักดี",
+      bookerName: "สมศรี รักดี",
+      customerNickname: "Nok",
+      bankName: "ไทยพาณิชย์",
+      payoutChannel: "093-123-4567 (PromptPay)",
+      accountHolder: "นางสาวสมศรี รักดี",
       refundAmount: 200,
       reason: "ยกเลิกคำสั่งซื้อ",
       status: "APPROVED",
@@ -432,9 +441,11 @@ export default function PaymentManagement() {
               <TableRow>
                 <TableHead>เลขที่คำขอ</TableHead>
                 <TableHead>เลขที่คิว</TableHead>
-                <TableHead>ชื่อลูกค้า</TableHead>
-                <TableHead>จำนวนเงิน</TableHead>
-                <TableHead>เหตุผล</TableHead>
+                <TableHead>ชื่อเล่น/ผู้จอง</TableHead>
+                <TableHead>ธนาคาร</TableHead>
+                <TableHead>บัญชี / PromptPay / บัตร ปชช.</TableHead>
+                <TableHead>ชื่อบัญชี</TableHead>
+                <TableHead>จำนวนเงินที่คืน</TableHead>
                 <TableHead>สถานะ</TableHead>
                 <TableHead>วันที่ขอ</TableHead>
                 <TableHead>การจัดการ</TableHead>
@@ -445,12 +456,17 @@ export default function PaymentManagement() {
                 <TableRow key={refund.id}>
                   <TableCell className="font-medium">{refund.id}</TableCell>
                   <TableCell>{refund.bookingId}</TableCell>
-                  <TableCell>{refund.customerName}</TableCell>
+                  <TableCell className="space-y-1">
+                    <p className="font-medium">{refund.bookerName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      ({refund.customerNickname})
+                    </p>
+                  </TableCell>
+                  <TableCell>{refund.bankName}</TableCell>
+                  <TableCell>{refund.payoutChannel}</TableCell>
+                  <TableCell>{refund.accountHolder}</TableCell>
                   <TableCell className="font-medium">
                     ฿{refund.refundAmount}
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate">
-                    {refund.reason}
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(refund.status)}>
