@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,50 +11,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import Link from "next/link";
+import { useRegister } from "./hooks/use-register";
 
 export default function SignUpPage() {
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    line: "",
-    password: "",
-    confirmPassword: "",
-  });
+  const { form, onSubmit, isPending } = useRegister();
+  const {
+    register,
+    formState: { errors },
+  } = form;
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("รหัสผ่านไม่ตรงกัน");
-      setLoading(false);
-      return;
-    }
-
-    // Skip backend for demo purposes – go straight to dashboard
-    setTimeout(() => {
-      router.push("/dashboard");
-      setLoading(false);
-    }, 500);
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -77,83 +45,91 @@ export default function SignUpPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={onSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
+                  <div className="flex items-center gap-1">
                   <Label htmlFor="firstName">ชื่อ</Label>
+                  <span className="text-red-500 text-xs">*</span>
+                  </div>
                   <Input
                     id="firstName"
-                    name="firstName"
-                    type="text"
                     placeholder="ชื่อ"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    required
+                    {...register("firstName")}
                   />
+                  {errors.firstName && (
+                    <p className="text-xs text-red-500">{errors.firstName.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">นามสกุล</Label>
+                  <div className="flex items-center gap-1">
+                    <Label htmlFor="lastName">นามสกุล</Label>
+                    <span className="text-red-500 text-xs">*</span>
+                  </div>
                   <Input
                     id="lastName"
-                    name="lastName"
-                    type="text"
                     placeholder="นามสกุล"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    required
+                    {...register("lastName")}
                   />
+                  {errors.lastName && (
+                    <p className="text-xs text-red-500">{errors.lastName.message}</p>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">อีเมล</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="email">อีเมล</Label>
+                  <span className="text-red-500 text-xs">*</span>
+                </div>
                 <Input
                   id="email"
-                  name="email"
                   type="email"
                   placeholder="example@email.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
+                  {...register("email")}
                 />
+                {errors.email && (
+                  <p className="text-xs text-red-500">{errors.email.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">เบอร์โทรศัพท์</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="phone">เบอร์โทรศัพท์</Label>
+                  <span className="text-red-500 text-xs">*</span>
+                </div>
                 <Input
                   id="phone"
-                  name="phone"
                   type="tel"
+                  maxLength={10}
                   placeholder="08xxxxxxxx"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
+                  {...register("phone")}
                 />
+                {errors.phone && (
+                  <p className="text-xs text-red-500">{errors.phone.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="line">LINE ID (ไม่จำเป็น)</Label>
                 <Input
                   id="line"
-                  name="line"
-                  type="text"
                   placeholder="line_id"
-                  value={formData.line}
-                  onChange={handleChange}
+                  {...register("line")}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">รหัสผ่าน</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="password">รหัสผ่าน</Label>
+                  <span className="text-red-500 text-xs">*</span>
+                </div>
                 <div className="relative">
                   <Input
                     id="password"
-                    name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="กรอกรหัสผ่าน"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
+                    {...register("password")}
                   />
                   <Button
                     type="button"
@@ -162,26 +138,25 @@ export default function SignUpPage() {
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
+                {errors.password && (
+                  <p className="text-xs text-red-500">{errors.password.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">ยืนยันรหัสผ่าน</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="confirmPassword">ยืนยันรหัสผ่าน</Label>
+                  <span className="text-red-500 text-xs">*</span>
+                </div>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
-                    name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="กรอกรหัสผ่านอีกครั้ง"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    required
+                    {...register("confirmPassword")}
                   />
                   <Button
                     type="button"
@@ -190,23 +165,16 @@ export default function SignUpPage() {
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
+                {errors.confirmPassword && (
+                  <p className="text-xs text-red-500">{errors.confirmPassword.message}</p>
+                )}
               </div>
 
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
+              <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending ? (
                   <div className="flex items-center gap-2">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                     กำลังสร้างบัญชี...

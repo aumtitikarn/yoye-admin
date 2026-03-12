@@ -40,37 +40,37 @@ const navigation = [
   },
   {
     name: "Event Management",
-    href: "/dashboard/events",
+    href: "/events",
     icon: Calendar,
     current: false,
   },
   {
     name: "Booking & Form Management",
-    href: "/dashboard/bookings",
+    href: "/bookings",
     icon: ClipboardList,
     current: false,
   },
   {
     name: "Payment & Slip Verification",
-    href: "/dashboard/payments",
+    href: "/payments",
     icon: CreditCard,
     current: false,
   },
   {
     name: "Fulfillment & Logistics",
-    href: "/dashboard/tracking",
+    href: "/tracking",
     icon: Package,
     current: false,
   },
   {
     name: "Financial Report",
-    href: "/dashboard/finance",
+    href: "/finance",
     icon: FileText,
     current: false,
   },
   {
     name: "User Role & Permission",
-    href: "/dashboard/users",
+    href: "/users",
     icon: Users,
     current: false,
   },
@@ -196,7 +196,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => {
+                    onClick={async () => {
+                      try {
+                        await fetch("/api/v1/auth/logout", { method: "POST", credentials: "include" });
+                      } catch {
+                        // ignore
+                      }
+                      document.cookie = "access_token=; path=/; max-age=0";
                       router.push("/auth/signin");
                     }}
                   >

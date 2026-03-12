@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,29 +11,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import Link from "next/link";
+import { useLogin } from "./hooks/use-login";
 
 export default function SignInPage() {
-  const [email, setEmail] = useState("admin@gmail.com");
-  const [password, setPassword] = useState("12345678");
+  const { form, onSubmit, isPending } = useLogin();
+  const {
+    register,
+    formState: { errors },
+  } = form;
+
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    // Skip backend for now – assume success and go straight to dashboard
-    setTimeout(() => {
-      router.push("/dashboard");
-      setLoading(false);
-    }, 500);
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -56,29 +44,34 @@ export default function SignInPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={onSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">อีเมล</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="email">อีเมล</Label>
+                  <span className="text-red-500 text-xs">*</span>
+                </div>
                 <Input
                   id="email"
                   type="email"
                   placeholder="email@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
+                  {...register("email")}
                 />
+                {errors.email && (
+                  <p className="text-xs text-red-500">{errors.email.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">รหัสผ่าน</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="password">รหัสผ่าน</Label>
+                  <span className="text-red-500 text-xs">*</span>
+                </div>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="กรอกรหัสผ่าน"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
+                    {...register("password")}
                   />
                   <Button
                     type="button"
@@ -87,23 +80,16 @@ export default function SignInPage() {
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
+                {errors.password && (
+                  <p className="text-xs text-red-500">{errors.password.message}</p>
+                )}
               </div>
 
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
+              <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending ? (
                   <div className="flex items-center gap-2">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                     กำลังเข้าสู่ระบบ...
