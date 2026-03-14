@@ -14,7 +14,7 @@ export function EventHeader() {
         </p>
       </div>
 
-      <Link href="/dashboard/events/create">
+      <Link href="/events/create">
         <Button>
           <Plus className="h-4 w-4 mr-2" />
           สร้างงานใหม่
