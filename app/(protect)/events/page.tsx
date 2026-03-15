@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { EventHeader } from "./components/event-header";
-import { EventsTable, EventItem } from "./components/events-table";
+import { EventsTable } from "./components/events-table";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -12,55 +12,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
+import { useEvents } from "./hooks/use-events";
+import { EEventType } from "./types/enum";
 
 export default function EventManagement() {
-  const [events] = useState<EventItem[]>([
-    {
-      id: "1",
-      name: "Concert Night 2024",
-      type: "TICKET",
-      status: "ACTIVE",
-      startDate: "2024-03-15",
-      endDate: "2024-03-15",
-      bookings: 45,
-      totalCapacity: 100,
-    },
-    {
-      id: "2",
-      name: "Product Pre-order",
-      type: "FORM",
-      status: "ACTIVE",
-      startDate: "2024-03-20",
-      endDate: "2024-03-31",
-      bookings: 23,
-      totalCapacity: 50,
-    },
-    {
-      id: "3",
-      name: "Fan Meeting",
-      type: "TICKET",
-      status: "DRAFT",
-      startDate: "2024-04-10",
-      endDate: "2024-04-10",
-      bookings: 0,
-      totalCapacity: 200,
-    },
-  ]);
-
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<"ALL" | "TICKET" | "FORM">(
-    "ALL",
-  );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<"ALL" | EEventType>("ALL");
+  const [page, setPage] = useState(1);
 
-  const filteredEvents = useMemo(() => {
-    return events.filter((event) => {
-      const matchesSearch = event.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const matchesFilter = filterType === "ALL" || event.type === filterType;
-      return matchesSearch && matchesFilter;
-    });
-  }, [events, searchTerm, filterType]);
+  const { data, isLoading } = useEvents({
+    search: searchQuery || undefined,
+    type: filterType === "ALL" ? undefined : filterType,
+    page,
+    pageSize: 10,
+  });
 
   return (
     <div className="space-y-6">
@@ -74,27 +40,34 @@ export default function EventManagement() {
             placeholder="ค้นหาชื่องาน..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && setSearchQuery(searchTerm)}
             className="pl-10 bg-white"
           />
         </div>
         <Select
           value={filterType}
-          onValueChange={(value: "ALL" | "TICKET" | "FORM") =>
-            setFilterType(value)
-          }
+          onValueChange={(value: "ALL" | EEventType) => setFilterType(value)}
         >
           <SelectTrigger className="w-full sm:w-48 bg-white">
             <SelectValue placeholder="เลือกประเภทงาน" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">ทั้งหมด</SelectItem>
-            <SelectItem value="TICKET">แบบตั๋ว</SelectItem>
-            <SelectItem value="FORM">แบบฟอร์ม</SelectItem>
+            <SelectItem value={EEventType.TICKET}>แบบตั๋ว</SelectItem>
+            <SelectItem value={EEventType.FORM}>แบบฟอร์ม</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <EventsTable events={filteredEvents} />
+      {isLoading ? (
+        <div className="text-center py-10 text-muted-foreground">กำลังโหลด...</div>
+      ) : (
+        <EventsTable
+          events={data?.data ?? []}
+          pagination={data?.pagination}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   );
 }
