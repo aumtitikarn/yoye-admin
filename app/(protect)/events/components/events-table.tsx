@@ -47,7 +47,7 @@ import { useMutationPatch } from "@/service/globalQuery";
 import { IEvent } from "../types/interface";
 import { IMeta, IBaseResponseData } from "@/types/globalType";
 
-function StatusSwitch({ event }: { event: IEvent }) {
+function StatusSwitch({ event }: Readonly<{ event: IEvent }>) {
   const queryClient = useQueryClient();
   const mutation = useMutationPatch<IBaseResponseData<unknown>, { status: boolean }>(
     event.type === "TICKET" ? `events/ticket/${event.id}` : `events/form/${event.id}`,
@@ -74,7 +74,7 @@ type EventsTableProps = Readonly<{
   onPageChange?: (page: number) => void;
 }>;
 
-function EventRow({ event }: { event: IEvent }) {
+function EventRow({ event }: Readonly<{ event: IEvent }>) {
   const router = useRouter();
   const deleteMutation = useDeleteEvent();
   const [confirmOpen, setConfirmOpen] = React.useState(false);
@@ -98,10 +98,10 @@ function EventRow({ event }: { event: IEvent }) {
             )}
           </Badge>
         </TableCell>
-        <TableCell>{event.capacity ?? "-"}</TableCell>
+        <TableCell>{event.capacity?.toLocaleString() ?? "-"}</TableCell>
         <TableCell>
           <span className={event.capacityAmount <= 0 ? "text-red-600 font-medium" : ""}>
-            {event.capacityAmount}
+            {event.capacityAmount.toLocaleString()}
           </span>
         </TableCell>
         <TableCell>
