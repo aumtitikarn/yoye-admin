@@ -1,4 +1,4 @@
-import { PaymentSlipStatus, PaymentSlipType } from "./enum";
+import { PaymentSlipStatus, PaymentSlipType, RefundStatus } from "./enum";
 
 export type IPaymentSlipBooking = {
   id: number;
@@ -46,6 +46,50 @@ export type IPaymentSlipQuery = {
   type?: PaymentSlipType;
   status?: PaymentSlipStatus;
   bookingId?: number;
+  eventId?: number;
+  search?: string;
+};
+
+export type IRefundRequest = {
+  id: number;
+  bookingId: number;
+  paymentSlipId: number;
+  processedById: number | null;
+  bookingRef: string;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  amount: number;
+  status: RefundStatus;
+  reason: string;
+  requestedAt: string;
+  processedAt: string | null;
+  booking: {
+    id: number;
+    queueCode: string;
+    bookingCode: string;
+    nameCustomer: string;
+    event: {
+      id: number;
+      name: string;
+    };
+  };
+  paymentSlip: {
+    id: number;
+    type: PaymentSlipType;
+    slipAmount: number;
+  };
+  processedBy: {
+    id: number;
+    firstName: string;
+    lastName: string;
+  } | null;
+};
+
+export type IRefundRequestQuery = {
+  page?: number;
+  pageSize?: number;
+  status?: RefundStatus;
   eventId?: number;
   search?: string;
 };

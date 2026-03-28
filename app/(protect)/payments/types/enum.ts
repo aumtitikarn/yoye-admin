@@ -10,4 +10,11 @@ export enum PaymentSlipType {
   SERVICE_PAID = "SERVICE_PAID",
 }
 
+export enum RefundStatus {
+  REQUESTED= 'REQUESTED',
+  APPROVED= 'APPROVED',
+  REJECTED= 'REJECTED',
+  PAID= 'PAID'
+};
+
 
