@@ -266,7 +266,7 @@ model EventInsight {
 
 model Booking {
   id             String        @id @default(cuid())
-  queueCode      String        @unique
+  bookingCode      String        @unique
   eventId        String
   customerId     String
   status         BookingStatus @default(PENDING_APPROVAL)

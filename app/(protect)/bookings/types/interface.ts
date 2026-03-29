@@ -102,7 +102,6 @@ export interface IPaymentSlip {
 
 export interface IBooking {
   id: number;
-  queueCode: string;
   bookingCode: string;
   status: EBookingStatus;
   nameCustomer: string;
@@ -115,7 +114,6 @@ export interface IBooking {
 
 export interface IBookingDetail {
   id: number;
-  queueCode: string;
   bookingCode: string;
   status: EBookingStatus;
   paymentStatus: string;

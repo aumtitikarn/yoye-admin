@@ -137,7 +137,7 @@ export function BookingUpdateStatusDialog({
         <DialogHeader>
           <DialogTitle>แก้ไขสถานะ</DialogTitle>
           <DialogDescription>
-            คิว {booking?.queueCode} — {booking?.nameCustomer}
+            คิว {booking?.bookingCode} — {booking?.nameCustomer}
           </DialogDescription>
         </DialogHeader>
         {content}

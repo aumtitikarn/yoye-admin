@@ -199,7 +199,7 @@ export default function SlipVerification() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="ค้นหาชื่อลูกค้าหรือเลขที่คิว"
+                placeholder="ค้นหาชื่อลูกค้าหรือรหัสการจอง"
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); resetPage(); }}
                 className="pl-10"
@@ -245,7 +245,7 @@ export default function SlipVerification() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>เลขที่สลิป</TableHead>
-                      <TableHead>เลขที่คิว</TableHead>
+                      <TableHead>รหัสการจอง</TableHead>
                       <TableHead>ชื่อลูกค้า</TableHead>
                       <TableHead>งาน</TableHead>
                       <TableHead>ประเภท</TableHead>
@@ -260,7 +260,7 @@ export default function SlipVerification() {
                     {slips.map((slip) => (
                       <TableRow key={slip.id}>
                         <TableCell className="font-medium">{slip.id}</TableCell>
-                        <TableCell>{slip.booking.queueCode}</TableCell>
+                        <TableCell>{slip.booking.bookingCode}</TableCell>
                         <TableCell>{slip.booking.nameCustomer}</TableCell>
                         <TableCell>{slip.booking.event.name}</TableCell>
                         <TableCell>
@@ -453,8 +453,8 @@ export default function SlipVerification() {
                   <p className="font-medium">{selectedSlip.booking.nameCustomer}</p>
                 </div>
                 <div>
-                  <Label>เลขที่คิว</Label>
-                  <p className="font-medium">{selectedSlip.booking.queueCode}</p>
+                  <Label>รหัสการจอง</Label>
+                  <p className="font-medium">{selectedSlip.booking.bookingCode}</p>
                 </div>
                 <div>
                   <Label>งาน</Label>

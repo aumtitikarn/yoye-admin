@@ -1,0 +1,24 @@
+export enum EFulfillmentType {
+  ETICKET = "ETICKET",
+  PICKUP = "PICKUP",
+  DELIVERY = "DELIVERY",
+}
+
+export enum EDeliveryStatus {
+  NOT_STARTED = "NOT_STARTED",
+  WAITING_DELIVERY = "WAITING_DELIVERY",
+  DELIVERED = "DELIVERED",
+  CANCELLED = "CANCELLED",
+}
+
+export enum EBookingStatus {
+  WAITING_SERVICE_FEE = "WAITING_SERVICE_FEE",
+  WAITING_SERVICE_FEE_VERIFY = "WAITING_SERVICE_FEE_VERIFY",
+  SERVICE_FEE_PAID = "SERVICE_FEE_PAID",
+}
+
+export enum EPaymentStatus {
+  PAID = "PAID",
+  PENDING = "PENDING",
+  FAILED = "FAILED",
+}

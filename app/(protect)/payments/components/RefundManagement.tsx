@@ -166,7 +166,7 @@ export default function RefundManagement() {
           การจัดการคืนเงิน
         </CardTitle>
         <CardDescription>
-          รายการคิวที่รอการคืนเงินและประวัติการคืนเงิน
+          รายการจองที่รอการคืนเงินและประวัติการคืนเงิน
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -174,7 +174,7 @@ export default function RefundManagement() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="ค้นหาชื่อผู้จอง หรือเลขที่คิว"
+              placeholder="ค้นหาชื่อผู้จอง หรือรหัสการจอง"
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); resetPage(); }}
               className="pl-10"
@@ -212,7 +212,7 @@ export default function RefundManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead>เลขที่คำขอ</TableHead>
-                <TableHead>เลขที่คิว</TableHead>
+                <TableHead>รหัสการจอง</TableHead>
                 <TableHead>ชื่อลูกค้า</TableHead>
                 <TableHead>งาน</TableHead>
                 <TableHead>ธนาคาร</TableHead>
@@ -228,7 +228,7 @@ export default function RefundManagement() {
               {refunds.map((refund) => (
                 <TableRow key={refund.id}>
                   <TableCell className="font-medium">{refund.id}</TableCell>
-                  <TableCell>{refund.booking.queueCode}</TableCell>
+                  <TableCell>{refund.booking.bookingCode}</TableCell>
                   <TableCell>{refund.booking.nameCustomer}</TableCell>
                   <TableCell>{refund.booking.event.name}</TableCell>
                   <TableCell>{refund.bankName}</TableCell>
@@ -340,8 +340,8 @@ export default function RefundManagement() {
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">ข้อมูลการจอง</p>
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                 <div>
-                  <p className="text-muted-foreground">เลขที่คิว</p>
-                  <p className="font-medium">{selectedRefund.booking.queueCode}</p>
+                  <p className="text-muted-foreground">รหัสการจอง</p>
+                  <p className="font-medium">{selectedRefund.booking.bookingCode}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">รหัสการจอง</p>
@@ -426,7 +426,7 @@ export default function RefundManagement() {
         <DialogHeader>
           <DialogTitle>เปลี่ยนสถานะ</DialogTitle>
           <DialogDescription>
-            {selectedRefund?.booking.nameCustomer} — {selectedRefund?.booking.queueCode}
+            {selectedRefund?.booking.nameCustomer} — {selectedRefund?.booking.bookingCode}
           </DialogDescription>
         </DialogHeader>
         {selectedRefund && (

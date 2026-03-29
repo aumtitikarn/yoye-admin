@@ -61,8 +61,8 @@ export function BookingsTable({
     <>
     <Card>
       <CardHeader>
-        <CardTitle>รายการคิว {meta ? `(${meta.totalCounts})` : ""}</CardTitle>
-        <CardDescription>รายการคิวทั้งหมดตามตัวกรองที่เลือก</CardDescription>
+        <CardTitle>รายการจอง {meta ? `(${meta.totalCounts})` : ""}</CardTitle>
+        <CardDescription>รายการจองทั้งหมดตามตัวกรองที่เลือก</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -74,7 +74,7 @@ export function BookingsTable({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>เลขที่คิว</TableHead>
+                  <TableHead>รหัสการจอง</TableHead>
                   <TableHead>ชื่องาน</TableHead>
                   <TableHead>ชื่อผู้จอง</TableHead>
                   <TableHead>สถานะ</TableHead>
@@ -87,7 +87,7 @@ export function BookingsTable({
                 {bookings.map((booking) => (
                   <TableRow key={booking.id}>
                     <TableCell className="font-medium">
-                      {booking.queueCode}
+                      {booking.bookingCode}
                     </TableCell>
                     <TableCell>{booking.event.name}</TableCell>
                     <TableCell>{booking.nameCustomer}</TableCell>
@@ -198,7 +198,7 @@ export function BookingsTable({
       open={!!deletingBooking}
       onOpenChange={(open) => { if (!open) setDeletingBooking(null); }}
       title="ยืนยันการลบ"
-      description={`ต้องการลบคิว ${deletingBooking?.queueCode} ของ ${deletingBooking?.nameCustomer} ใช่หรือไม่?`}
+      description={`ต้องการลบคิว ${deletingBooking?.bookingCode} ของ ${deletingBooking?.nameCustomer} ใช่หรือไม่?`}
       confirmLabel="ลบ"
       variant="destructive"
       onConfirm={() => {

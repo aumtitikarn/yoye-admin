@@ -2,7 +2,7 @@ import { PaymentSlipStatus, PaymentSlipType, RefundStatus } from "./enum";
 
 export type IPaymentSlipBooking = {
   id: number;
-  queueCode: string;
+  bookingCode: string;
   bookingCode: string;
   nameCustomer: string;
   status: string;
@@ -66,7 +66,7 @@ export type IRefundRequest = {
   processedAt: string | null;
   booking: {
     id: number;
-    queueCode: string;
+    bookingCode: string;
     bookingCode: string;
     nameCustomer: string;
     event: {
