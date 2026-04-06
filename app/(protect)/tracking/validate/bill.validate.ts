@@ -16,6 +16,14 @@ export const createBillSchema = z.object({
       .min(0, "ค่าส่งต้องไม่น้อยกว่า 0")
       .optional(),
   ),
+  vatServiceFee: z.coerce
+    .number({ invalid_type_error: "VAT ค่ากดบัตรต้องเป็นตัวเลข" })
+    .min(0, "VAT ค่ากดบัตรต้องไม่น้อยกว่า 0")
+    .optional(),
+  vatShippingFee: z.coerce
+    .number({ invalid_type_error: "VAT ค่าส่งต้องเป็นตัวเลข" })
+    .min(0, "VAT ค่าส่งต้องไม่น้อยกว่า 0")
+    .optional(),
   note: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (

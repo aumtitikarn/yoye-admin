@@ -2,14 +2,14 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { UseMutationOptions } from "@tanstack/react-query";
+import { UseMutationOptions, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useMutationPost } from "@/service/globalQuery";
+import { useMutationPatch } from "@/service/globalQuery";
 import { IBaseResponse } from "@/types/globalType";
 import { EFulfillmentType } from "../types/enum";
 import { createBillSchema, CreateBillFormValues } from "../validate/bill.validate";
 
-export interface ICreateBillPayload {
+export interface IUpdateBillPayload {
   type: EFulfillmentType;
   serviceFee: number;
   shippingFee: number;
@@ -18,17 +18,18 @@ export interface ICreateBillPayload {
   note?: string;
 }
 
-export function useCreateBillMutation(
+export function useUpdateBillMutation(
   bookingId: number,
-  options?: UseMutationOptions<IBaseResponse, unknown, ICreateBillPayload>,
+  options?: UseMutationOptions<IBaseResponse, unknown, IUpdateBillPayload>,
 ) {
-  return useMutationPost<IBaseResponse, ICreateBillPayload>(
+  return useMutationPatch<IBaseResponse, IUpdateBillPayload>(
     `orders/${bookingId}/bill`,
     options,
   );
 }
 
-export function useCreateBill(bookingId: number) {
+export function useUpdateBill(bookingId: number) {
+  const queryClient = useQueryClient();
   const form = useForm<CreateBillFormValues>({
     resolver: zodResolver(createBillSchema),
     defaultValues: {
@@ -41,15 +42,11 @@ export function useCreateBill(bookingId: number) {
     },
   });
 
-  const mutation = useCreateBillMutation(bookingId, {
+  const mutation = useUpdateBillMutation(bookingId, {
     onSuccess: () => {
-      toast.success("สร้างบิลสำเร็จ", { position: "top-center" });
-      form.reset({
-        type: EFulfillmentType.PICKUP,
-        serviceFee: 0,
-        shippingFee: 0,
-        note: "",
-      });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      toast.success("อัปเดตบิลสำเร็จ", { position: "top-center" });
+      form.reset();
     },
     onError: (error: unknown) => {
       try {

@@ -3,21 +3,21 @@
 import { useState } from "react";
 import { BillDialog } from "./components/BillDialog";
 import { EditStatusDialog } from "./components/EditStatusDialog";
+import { HistoryDialog } from "./components/history-dialog";
 import { OrdersTable } from "./components/OrdersTable";
-import { mockBillHistory } from "./components/mock-data";
-import type { BillFormData } from "./components/types";
-import type { EBookingStatus } from "./types/enum";
 import type { IBookingOrder } from "./types/interface";
+import { EBookingStatus } from "./types/enum";
 
 export default function PaymentSummaryPage() {
   const [selectedItem, setSelectedItem] = useState<IBookingOrder | null>(null);
   const [isBillDialogOpen, setIsBillDialogOpen] = useState(false);
   const [billDialogMode, setBillDialogMode] = useState<"create" | "manage">("manage");
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const handleManageTicket = (item: IBookingOrder) => {
     setSelectedItem(item);
-    setBillDialogMode(item.fulfillment ? "manage" : "create");
+    setBillDialogMode(item.status === EBookingStatus.WAITING_SERVICE_FEE ? "create" : "manage");
     setIsBillDialogOpen(true);
   };
 
@@ -26,14 +26,9 @@ export default function PaymentSummaryPage() {
     setIsStatusDialogOpen(true);
   };
 
-  const handleSaveBill = (data: BillFormData) => {
-    console.log("Saving bill:", { itemId: selectedItem?.id, ...data });
-    // TODO: API call
-  };
-
-  const handleSaveStatus = (status: EBookingStatus, note: string) => {
-    console.log("Saving status:", { itemId: selectedItem?.id, status, note });
-    // TODO: API call
+  const handleViewBillHistory = (item: IBookingOrder) => {
+    setSelectedItem(item);
+    setIsHistoryOpen(true);
   };
 
   return (
@@ -46,22 +41,27 @@ export default function PaymentSummaryPage() {
       <OrdersTable
         onManageTicket={handleManageTicket}
         onOpenStatusDialog={handleOpenStatusDialog}
+        onViewBillHistory={handleViewBillHistory}
       />
 
       <BillDialog
+        key={selectedItem?.id ?? "empty"}
         open={isBillDialogOpen}
         onOpenChange={setIsBillDialogOpen}
         item={selectedItem}
         mode={billDialogMode}
-        history={selectedItem ? (mockBillHistory[selectedItem.id] ?? []) : []}
-        onSave={handleSaveBill}
+      />
+
+      <HistoryDialog
+        open={isHistoryOpen}
+        onOpenChange={setIsHistoryOpen}
+        item={selectedItem}
       />
 
       <EditStatusDialog
         open={isStatusDialogOpen}
         onOpenChange={setIsStatusDialogOpen}
         item={selectedItem}
-        onSave={handleSaveStatus}
       />
     </div>
   );

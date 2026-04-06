@@ -21,38 +21,63 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { History } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { VAT_RATE, fulfillmentTypeConfig, parseAmount } from "./constants";
 import type { IBookingOrder } from "../types/interface";
-import type { BillFormData, BillHistoryEntry, FulfillmentType } from "./types";
+import { EFulfillmentType } from "../types/enum";
+import { useCreateBill } from "../hooks/use-create-bill";
+import { useUpdateBillMutation } from "../hooks/use-update.bill";
+import { useBillLog } from "../hooks/use-bill-log";
 
 type Props = {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   readonly item: IBookingOrder | null;
   readonly mode: "create" | "manage";
-  readonly history: BillHistoryEntry[];
-  readonly onSave: (data: BillFormData) => void;
+  readonly onSave?: () => void;
 };
 
-export function BillDialog({ open, onOpenChange, item, mode, history, onSave }: Props) {
-  const [ticketFee, setTicketFee] = useState(item?.serviceFee?.toString() ?? "");
-  const [shippingFee, setShippingFee] = useState(
-    item?.fulfillment?.shippingFee?.toString() ?? "",
-  );
-  const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>(
-    (item?.fulfillment?.type as FulfillmentType) ?? "ETICKET",
-  );
+type UserEdits = {
+  ticketFee?: string;
+  shippingFee?: string;
+  fulfillmentType?: EFulfillmentType;
+  note?: string;
+};
+
+export function BillDialog({ open, onOpenChange, item, mode, onSave }: Props) {
+  const [userEdits, setUserEdits] = useState<UserEdits>({});
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  // Reset form when item changes
+  const queryClient = useQueryClient();
+  const bookingId = item?.id ?? 0;
+
+  const createBill = useCreateBill(bookingId);
+  const updateMutation = useUpdateBillMutation(bookingId);
+  const isPending = mode === "create" ? createBill.isPending : updateMutation.isPending;
+
+  const { data: billLogData, isLoading: isBillLogLoading } = useBillLog(mode === "manage" ? bookingId : 0);
+  const latestBillLog = billLogData?.data?.[0];
+
+  // Derive effective values: user edits take priority, then latestBillLog, then item defaults (create only)
+  const defaultTicketFee = latestBillLog?.serviceFee.toString()
+    ?? (mode === "create" ? (item?.serviceFee?.toString() ?? "") : "");
+  const defaultShippingFee = latestBillLog?.shippingFee.toString()
+    ?? (mode === "create" ? (item?.fulfillment?.shippingFee?.toString() ?? "") : "");
+  const defaultFulfillmentType: EFulfillmentType =
+    latestBillLog?.fulfillmentType
+    ?? item?.fulfillment?.type
+    ?? EFulfillmentType.ETICKET;
+
+  const ticketFee = userEdits.ticketFee ?? defaultTicketFee;
+  const shippingFee = userEdits.shippingFee ?? defaultShippingFee;
+  const fulfillmentType: EFulfillmentType = userEdits.fulfillmentType ?? defaultFulfillmentType;
+  const note = userEdits.note ?? (latestBillLog?.note ?? "");
+
   const handleOpenChange = (val: boolean) => {
-    if (val && item) {
-      setTicketFee(item.serviceFee?.toString() ?? "");
-      setShippingFee(item.fulfillment?.shippingFee?.toString() ?? "");
-      setFulfillmentType((item.fulfillment?.type as FulfillmentType) ?? "ETICKET");
-    }
+    if (!val) setUserEdits({});
     onOpenChange(val);
   };
 
@@ -63,19 +88,55 @@ export function BillDialog({ open, onOpenChange, item, mode, history, onSave }: 
   const vatShipping = isDelivery ? shippingFeeAmount * VAT_RATE : 0;
   const totalDue = ticketFeeAmount + shippingFeeAmount + vatTicket + vatShipping;
 
-  const handleConfirm = () => {
-    onSave({
-      ticketFee: ticketFeeAmount,
-      shippingFee: shippingFeeAmount,
-      vatAmount: vatTicket + vatShipping,
-      totalAmount: totalDue,
-      fulfillmentType,
-    });
-    setIsConfirmOpen(false);
-    onOpenChange(false);
+  const payload = {
+    type: fulfillmentType,
+    serviceFee: ticketFeeAmount,
+    shippingFee: shippingFeeAmount,
+    vatServiceFee: vatTicket,
+    vatShippingFee: vatShipping,
+    note: note || undefined,
   };
 
-  const sortedHistory = [...history].reverse();
+  const resetForm = () => setUserEdits({});
+
+  const handleConfirm = async () => {
+    if (mode === "create") {
+      try {
+        await createBill.mutateAsync(payload);
+        queryClient.invalidateQueries({ queryKey: ["orders"] });
+        queryClient.invalidateQueries({ queryKey: ["bill-log", bookingId] });
+        resetForm();
+        setIsConfirmOpen(false);
+        onOpenChange(false);
+        onSave?.();
+      } catch {
+        setIsConfirmOpen(false);
+      }
+    } else {
+      updateMutation.mutate(payload, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["orders"] });
+          queryClient.invalidateQueries({ queryKey: ["bill-log", bookingId] });
+          toast.success("อัปเดตบิลสำเร็จ", { position: "top-center" });
+          resetForm();
+          setIsConfirmOpen(false);
+          onOpenChange(false);
+          onSave?.();
+        },
+        onError: (error: unknown) => {
+          try {
+            const parsed = JSON.parse((error as Error).message);
+            toast.error(parsed?.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่", { position: "top-center" });
+          } catch {
+            toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่", { position: "top-center" });
+          }
+          setIsConfirmOpen(false);
+        },
+      });
+    }
+  };
+
+  const dialogTitle = mode === "create" ? "สร้างบิลค่ากดบัตร" : "จัดการบิลค่ากดบัตร";
 
   return (
     <>
@@ -85,16 +146,17 @@ export function BillDialog({ open, onOpenChange, item, mode, history, onSave }: 
           style={{ width: "92vw", maxWidth: "1200px" }}
         >
           <DialogHeader className="flex-shrink-0 pb-4 border-b">
-            <DialogTitle>
-              {mode === "create" ? "สร้างบิลค่ากดบัตร" : "จัดการบิลค่ากดบัตร"}
-            </DialogTitle>
+            <DialogTitle>{dialogTitle}</DialogTitle>
             <DialogDescription>
               {item && `ลูกค้า: ${item.nameCustomer} - ${item.event.name}`}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto py-4">
-            <div className="grid gap-6 lg:grid-cols-2 mb-6">
+            {mode === "manage" && !isBillLogLoading && !latestBillLog && (
+              <p className="text-center text-sm text-gray-500 py-8">ยังไม่มีข้อมูลบิลในระบบ</p>
+            )}
+            {(mode === "create" || latestBillLog) && (<><div className="grid gap-6 lg:grid-cols-2 mb-6">
               {/* Fulfillment Selection */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">
@@ -102,14 +164,15 @@ export function BillDialog({ open, onOpenChange, item, mode, history, onSave }: 
                 </h3>
                 <div className="space-y-3">
                   {Object.entries(fulfillmentTypeConfig).map(([key, config]) => (
-                    <div
+                    <button
                       key={key}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                      type="button"
+                      className={`w-full text-left p-4 border rounded-lg cursor-pointer transition-colors ${
                         fulfillmentType === key
                           ? "border-blue-500 bg-blue-50"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
-                      onClick={() => setFulfillmentType(key as FulfillmentType)}
+                      onClick={() => setUserEdits((prev) => ({ ...prev, fulfillmentType: key as EFulfillmentType }))}
                     >
                       <div className="flex items-start gap-3">
                         <div className="mt-1">{config.icon}</div>
@@ -118,7 +181,7 @@ export function BillDialog({ open, onOpenChange, item, mode, history, onSave }: 
                           <p className="text-sm text-gray-600 mt-1">{config.description}</p>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -135,7 +198,7 @@ export function BillDialog({ open, onOpenChange, item, mode, history, onSave }: 
                       type="number"
                       placeholder="กรอกค่ากดบัตร"
                       value={ticketFee}
-                      onChange={(e) => setTicketFee(e.target.value)}
+                      onChange={(e) => setUserEdits((prev) => ({ ...prev, ticketFee: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -144,12 +207,21 @@ export function BillDialog({ open, onOpenChange, item, mode, history, onSave }: 
                       type="number"
                       placeholder="กรอกค่าส่ง"
                       value={shippingFee}
-                      onChange={(e) => setShippingFee(e.target.value)}
+                      onChange={(e) => setUserEdits((prev) => ({ ...prev, shippingFee: e.target.value }))}
                       disabled={fulfillmentType === "ETICKET"}
                     />
                     {fulfillmentType === "ETICKET" && (
                       <p className="text-xs text-gray-500">E-ticket ไม่มีค่าส่ง</p>
                     )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>หมายเหตุ</Label>
+                    <Textarea
+                      placeholder="หมายเหตุ (ถ้ามี)"
+                      value={note}
+                      onChange={(e) => setUserEdits((prev) => ({ ...prev, note: e.target.value }))}
+                      rows={2}
+                    />
                   </div>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg space-y-2 text-sm">
@@ -197,60 +269,8 @@ export function BillDialog({ open, onOpenChange, item, mode, history, onSave }: 
                 </div>
               </div>
             )}
+            </>)}
 
-            {/* Bill History */}
-            {sortedHistory.length > 0 && (
-              <div className="border rounded-lg p-4 space-y-3">
-                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                  <History className="h-4 w-4" />
-                  ประวัติการสร้าง/แก้ไขบิล
-                </h3>
-                <div className="space-y-3">
-                  {sortedHistory.map((entry) => (
-                    <div key={entry.id} className="flex gap-3 text-sm">
-                      <div className="flex flex-col items-center">
-                        <div
-                          className={`h-2 w-2 rounded-full mt-1.5 ${
-                            entry.action === "create" ? "bg-blue-500" : "bg-orange-400"
-                          }`}
-                        />
-                        <div className="w-px flex-1 bg-gray-200 mt-1" />
-                      </div>
-                      <div className="pb-3 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span
-                            className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                              entry.action === "create"
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-orange-100 text-orange-700"
-                            }`}
-                          >
-                            {entry.action === "create" ? "สร้างบิล" : "แก้ไขบิล"}
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            {new Date(entry.timestamp).toLocaleString("th-TH", {
-                              dateStyle: "short",
-                              timeStyle: "short",
-                            })}
-                          </span>
-                        </div>
-                        <p className="text-gray-600 mt-1">โดย {entry.adminName}</p>
-                        <p className="text-gray-500">
-                          ค่ากด ฿{entry.ticketFee.toFixed(2)} · ค่าส่ง ฿
-                          {entry.shippingFee.toFixed(2)} · รวม ฿{entry.totalAmount.toFixed(2)} ·{" "}
-                          {fulfillmentTypeConfig[entry.fulfillmentType].label}
-                        </p>
-                        {entry.note && (
-                          <p className="text-gray-400 italic mt-0.5">
-                            &ldquo;{entry.note}&rdquo;
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           <DialogFooter className="flex-shrink-0 pt-4 border-t">
@@ -278,8 +298,10 @@ export function BillDialog({ open, onOpenChange, item, mode, history, onSave }: 
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm}>ยืนยัน</AlertDialogAction>
+            <AlertDialogCancel disabled={isPending}>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirm} disabled={isPending}>
+              {isPending ? "กำลังบันทึก..." : "ยืนยัน"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

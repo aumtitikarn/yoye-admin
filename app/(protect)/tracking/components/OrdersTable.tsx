@@ -35,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FileEdit, MoreVertical, Package, RefreshCw, Search, Send } from "lucide-react";
+import { FileEdit, History, MoreVertical, Package, RefreshCw, Search, Send } from "lucide-react";
 import { useState } from "react";
 import { useAllFulfillment } from "../hooks/use-all-fulfillment";
 import {
@@ -56,9 +56,10 @@ const deliveryStatusConfig: Record<EDeliveryStatus, { label: string; className: 
 type Props = {
   onManageTicket: (item: IBookingOrder) => void;
   onOpenStatusDialog: (item: IBookingOrder) => void;
+  onViewBillHistory: (item: IBookingOrder) => void;
 };
 
-export function OrdersTable({ onManageTicket, onOpenStatusDialog }: Props) {
+export function OrdersTable({ onManageTicket, onOpenStatusDialog, onViewBillHistory }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<EBookingStatus | "ALL">("ALL");
   const [page, setPage] = useState(1);
@@ -173,7 +174,7 @@ export function OrdersTable({ onManageTicket, onOpenStatusDialog }: Props) {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {isDelivery && deliveryStatus && deliveryStatusConfig[deliveryStatus] ? (
+                        {deliveryStatus && deliveryStatusConfig[deliveryStatus] ? (
                           <Badge className={deliveryStatusConfig[deliveryStatus].className}>
                             {deliveryStatusConfig[deliveryStatus].label}
                           </Badge>
@@ -207,6 +208,10 @@ export function OrdersTable({ onManageTicket, onOpenStatusDialog }: Props) {
                               <DropdownMenuItem onClick={() => onOpenStatusDialog(item)}>
                                 <RefreshCw className="h-4 w-4 mr-2" />
                                 แก้ไขสถานะ
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => onViewBillHistory(item)}>
+                                <History className="h-4 w-4 mr-2" />
+                                ประวัติการสร้างบิล
                               </DropdownMenuItem>
                               {canNotify && (
                                 <DropdownMenuItem onClick={() => setNotifyItem(item)}>
