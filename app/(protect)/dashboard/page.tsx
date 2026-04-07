@@ -9,272 +9,324 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Calendar,
-  Users,
   FileText,
   CreditCard,
-  AlertCircle,
-  TrendingUp,
-  TrendingDown,
   DollarSign,
-  Bell,
   CheckCircle,
   Clock,
-  XCircle,
+  RefreshCw,
 } from "lucide-react";
+import { useDashboardStats } from "./hooks/use-dashboard-stats";
+import { useDashboardAlerts } from "./hooks/use-dashboard-alerts";
+import { useDashboardActivity } from "./hooks/use-dashboard-activity";
+import { AlertItem, ActivityItem } from "./types/interface";
+
+// ────────────────────────────────────────────────────────────
+// Helpers
+// ────────────────────────────────────────────────────────────
+
+const priorityBorder: Record<AlertItem["priority"], string> = {
+  high: "border-l-red-500",
+  medium: "border-l-yellow-400",
+  low: "border-l-blue-400",
+};
+
+const priorityBadge: Record<AlertItem["priority"], "destructive" | "secondary" | "outline"> = {
+  high: "destructive",
+  medium: "secondary",
+  low: "outline",
+};
+
+const priorityLabel: Record<AlertItem["priority"], string> = {
+  high: "เร่งด่วน",
+  medium: "ปานกลาง",
+  low: "ปกติ",
+};
+
+function formatRelativeTime(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "เมื่อกี้";
+  if (mins < 60) return `${mins} นาทีที่แล้ว`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} ชั่วโมงที่แล้ว`;
+  return `${Math.floor(hrs / 24)} วันที่แล้ว`;
+}
+
+// ────────────────────────────────────────────────────────────
+// Sub-components
+// ────────────────────────────────────────────────────────────
+
+function StatRow({
+  label,
+  value,
+  loading,
+  valueClass = "text-gray-900",
+}: Readonly<{
+  label: string;
+  value: React.ReactNode;
+  loading: boolean;
+  valueClass?: string;
+}>) {
+  return (
+    <div className="flex items-center justify-between py-1.5">
+      <span className="text-sm text-gray-500">{label}</span>
+      {loading ? (
+        <Skeleton className="h-5 w-12 rounded" />
+      ) : (
+        <span className={`text-sm font-semibold ${valueClass}`}>{value}</span>
+      )}
+    </div>
+  );
+}
+
+function AlertCard({ alert }: Readonly<{ alert: AlertItem }>) {
+  return (
+    <div
+      className={`flex items-start gap-3 rounded-md border-l-4 bg-gray-50 px-4 py-3 ${priorityBorder[alert.priority]}`}
+    >
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-800 leading-snug">
+          {alert.message}
+        </p>
+        <p className="text-xs text-gray-400 mt-1">
+          {formatRelativeTime(alert.time)}
+        </p>
+      </div>
+      <Badge variant={priorityBadge[alert.priority]} className="shrink-0 text-xs">
+        {priorityLabel[alert.priority]}
+      </Badge>
+    </div>
+  );
+}
+
+function ActivityRow({ activity }: Readonly<{ activity: ActivityItem }>) {
+  return (
+    <div className="flex gap-3">
+      <div className="flex flex-col items-center">
+        <div className="h-7 w-7 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+          <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+        </div>
+        <div className="w-px flex-1 bg-gray-100 mt-1" />
+      </div>
+      <div className="pb-4 flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-800 leading-snug">
+          {activity.message}
+        </p>
+        <p className="text-xs text-gray-400 mt-0.5">
+          {activity.actor ? `${activity.actor} · ` : ""}
+          {formatRelativeTime(activity.createdAt)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────
+// Page
+// ────────────────────────────────────────────────────────────
 
 export default function DashboardOverview() {
-  // Mock data for demo
-  const stats = {
-    ticketMode: {
-      pendingApproval: 12,
-      inProgress: 8,
-      totalCompleted: 156,
-    },
-    formMode: {
-      newForms: 23,
-      pendingReview: 15,
-    },
-    finance: {
-      depositsHeld: 45000,
-      refundsAccumulated: 12000,
-      outstandingPayments: 8500,
-    },
-  };
+  const { data: statsData, isLoading: statsLoading, refetch: refetchStats } = useDashboardStats();
+  const { data: alertsData, isLoading: alertsLoading } = useDashboardAlerts(5);
+  const { data: activityData, isLoading: activityLoading } = useDashboardActivity(5);
 
-  const recentAlerts = [
-    {
-      id: 1,
-      type: "slip",
-      message: "มีสลิปใหม่จากลูกค้า #1234",
-      time: "2 นาทีที่แล้ว",
-      priority: "high",
-    },
-    {
-      id: 2,
-      type: "self_card",
-      message: "ลูกค้า #5678 แจ้งว่าได้บัตรเองแล้ว",
-      time: "5 นาทีที่แล้ว",
-      priority: "medium",
-    },
-    {
-      id: 3,
-      type: "form",
-      message: "มีฟอร์มใหม่จากลูกค้า #9012",
-      time: "10 นาทีที่แล้ว",
-      priority: "low",
-    },
-  ];
-
-  const getAlertIcon = (type: string) => {
-    switch (type) {
-      case "slip":
-        return <CreditCard className="h-4 w-4" />;
-      case "self_card":
-        return <CheckCircle className="h-4 w-4" />;
-      case "form":
-        return <FileText className="h-4 w-4" />;
-      default:
-        return <Bell className="h-4 w-4" />;
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "low":
-        return "bg-green-100 text-green-800 border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
+  const stats = statsData?.data;
+  const alerts = alertsData?.data ?? [];
+  const activities = activityData?.data ?? [];
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
-        <p className="text-gray-600">ภาพรวมระบบและสถิติสำคัญ</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">ภาพรวมระบบ — อัปเดตทุก 30 วินาที</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetchStats()}
+          className="gap-1.5"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          รีเฟรช
+        </Button>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Ticket Mode Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Ticket */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ticket Mode</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-600">Ticket Mode</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                <Calendar className="h-4 w-4 text-blue-600" />
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">คิวรออนุมัติ</span>
-                <Badge variant="secondary">
-                  {stats.ticketMode.pendingApproval}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">กำลังดำเนินการ</span>
-                <Badge variant="outline">{stats.ticketMode.inProgress}</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">จำนวนที่กดได้รวม</span>
-                <Badge variant="default">
-                  {stats.ticketMode.totalCompleted}
-                </Badge>
-              </div>
+          <CardContent className="pt-0">
+            <div className="divide-y divide-gray-100">
+              <StatRow label="รออนุมัติ" value={<Badge variant="destructive" className="text-xs">{stats?.ticket.pendingApproval}</Badge>} loading={statsLoading} />
+              <StatRow label="กำลังดำเนินการ" value={stats?.ticket.inProgress} loading={statsLoading} />
+              <StatRow label="สำเร็จแล้วทั้งหมด" value={stats?.ticket.totalCompleted} loading={statsLoading} valueClass="text-green-700" />
             </div>
           </CardContent>
         </Card>
 
-        {/* Form Mode Stats */}
+        {/* Form */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Form Mode</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-600">Form Mode</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                <FileText className="h-4 w-4 text-purple-600" />
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">ฟอร์มใหม่</span>
-                <Badge variant="secondary">{stats.formMode.newForms}</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">รอตรวจสอบ</span>
-                <Badge variant="outline">{stats.formMode.pendingReview}</Badge>
-              </div>
+          <CardContent className="pt-0">
+            <div className="divide-y divide-gray-100">
+              <StatRow label="ฟอร์มใหม่ (24 ชม.)" value={stats?.form.newForms} loading={statsLoading} />
+              <StatRow label="รอตรวจสอบสลิป" value={<Badge variant="secondary" className="text-xs">{stats?.form.pendingReview}</Badge>} loading={statsLoading} />
             </div>
           </CardContent>
         </Card>
 
-        {/* Finance Stats */}
+        {/* Finance */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Finance</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-600">Finance</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-green-50 flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-green-600" />
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">มัดจำถืออยู่</span>
-                <span className="text-sm font-medium">
-                  ฿{stats.finance.depositsHeld.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">เงินคืนสะสม</span>
-                <span className="text-sm font-medium text-red-600">
-                  ฿{stats.finance.refundsAccumulated.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">ค้างชำระ</span>
-                <span className="text-sm font-medium text-orange-600">
-                  ฿{stats.finance.outstandingPayments.toLocaleString()}
-                </span>
-              </div>
+          <CardContent className="pt-0">
+            <div className="divide-y divide-gray-100">
+              <StatRow
+                label="มัดจำถืออยู่"
+                value={`฿${(stats?.finance.depositsHeld ?? 0).toLocaleString()}`}
+                loading={statsLoading}
+                valueClass="text-blue-700"
+              />
+              <StatRow
+                label="เงินคืนสะสม"
+                value={`฿${(stats?.finance.refundsAccumulated ?? 0).toLocaleString()}`}
+                loading={statsLoading}
+                valueClass="text-red-600"
+              />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>การกระทำที่ใช้บ่อย</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button variant="outline" className="h-20 flex-col">
-                <CheckCircle className="h-6 w-6 mb-2" />
-                <span className="text-sm">อนุมัติคิว</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col">
-                <CreditCard className="h-6 w-6 mb-2" />
-                <span className="text-sm">ตรวจสลิป</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col">
-                <Calendar className="h-6 w-6 mb-2" />
-                <span className="text-sm">สร้างงาน</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col">
-                <FileText className="h-6 w-6 mb-2" />
-                <span className="text-sm">รายงาน</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Activity */}
+      {/* Quick Actions */}
       <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>กิจกรรมล่าสุดในระบบ</CardDescription>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-gray-600">Quick Actions</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">
-                  คิว #1234 ได้รับการอนุมัติแล้ว
-                </p>
-                <p className="text-xs text-gray-500">
-                  โดย Admin - 5 นาทีที่แล้ว
-                </p>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <CreditCard className="h-4 w-4 text-blue-600" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">
-                  สลิปจากลูกค้า #5678 ได้รับการตรวจสอบแล้ว
-                </p>
-                <p className="text-xs text-gray-500">
-                  โดย Staff - 15 นาทีที่แล้ว
-                </p>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center">
-                  <Clock className="h-4 w-4 text-yellow-600" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">
-                  ฟอร์มใหม่จากลูกค้า #9012 รอการตรวจสอบ
-                </p>
-                <p className="text-xs text-gray-500">30 นาทีที่แล้ว</p>
-              </div>
-            </div>
+        <CardContent className="pt-0">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { icon: CheckCircle, label: "อนุมัติคิว", color: "text-green-600", bg: "bg-green-50 hover:bg-green-100" },
+              { icon: CreditCard, label: "ตรวจสลิป", color: "text-blue-600", bg: "bg-blue-50 hover:bg-blue-100" },
+              { icon: Calendar, label: "สร้างงาน", color: "text-purple-600", bg: "bg-purple-50 hover:bg-purple-100" },
+              { icon: FileText, label: "รายงาน", color: "text-orange-600", bg: "bg-orange-50 hover:bg-orange-100" },
+            ].map(({ icon: Icon, label, color, bg }) => (
+              <button
+                key={label}
+                className={`flex flex-col items-center justify-center gap-2 rounded-lg border border-transparent p-4 transition-colors ${bg}`}
+              >
+                <Icon className={`h-5 w-5 ${color}`} />
+                <span className="text-xs font-medium text-gray-700">{label}</span>
+              </button>
+            ))}
           </div>
         </CardContent>
       </Card>
+
+      {/* Alerts + Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Recent Alerts */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-sm font-medium text-gray-600">การแจ้งเตือน</CardTitle>
+                <CardDescription className="text-xs mt-0.5">รายการที่ต้องดำเนินการ</CardDescription>
+              </div>
+              {!alertsLoading && alerts.length > 0 && (
+                <Badge variant="destructive" className="text-xs tabular-nums">
+                  {alerts.filter((a) => a.priority === "high").length} เร่งด่วน
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {alertsLoading && (
+              <div className="space-y-2">
+                {["a", "b", "c"].map((k) => (
+                  <Skeleton key={k} className="h-14 w-full rounded-md" />
+                ))}
+              </div>
+            )}
+            {!alertsLoading && alerts.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-8 text-gray-400 gap-2">
+                <CheckCircle className="h-8 w-8 text-green-300" />
+                <p className="text-sm">ไม่มีการแจ้งเตือน</p>
+              </div>
+            )}
+            {!alertsLoading && alerts.length > 0 && (
+              <div className="space-y-2">
+                {alerts.map((alert) => (
+                  <AlertCard key={alert.id} alert={alert} />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-gray-600">กิจกรรมล่าสุด</CardTitle>
+            <CardDescription className="text-xs mt-0.5">การเปลี่ยนแปลงสถานะโดย admin</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {activityLoading && (
+              <div className="space-y-4">
+                {["a", "b", "c"].map((k) => (
+                  <div key={k} className="flex gap-3">
+                    <Skeleton className="h-7 w-7 rounded-full shrink-0" />
+                    <div className="flex-1 space-y-1.5 pt-0.5">
+                      <Skeleton className="h-4 w-3/4 rounded" />
+                      <Skeleton className="h-3 w-1/3 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!activityLoading && activities.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-8 text-gray-400 gap-2">
+                <Clock className="h-8 w-8 text-gray-200" />
+                <p className="text-sm">ไม่มีกิจกรรม</p>
+              </div>
+            )}
+            {!activityLoading && activities.length > 0 && (
+              <div>
+                {activities.map((activity) => (
+                  <ActivityRow key={activity.id} activity={activity} />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
