@@ -1,0 +1,20 @@
+name: Manual Deploy to VPS
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH and Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/yoye-project
+            cd yoye-admin
+            git pull origin main
+            cd ~/yoye-project
+            docker compose up -d --build backend
